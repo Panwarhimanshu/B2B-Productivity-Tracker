@@ -10,10 +10,12 @@ import MyReports from './pages/rm/MyReports';
 import Performance from './pages/rm/Performance';
 import TeamDashboard from './pages/teamlead/TeamDashboard';
 import EmployeeReports from './pages/teamlead/EmployeeReports';
+import TeamTargets from './pages/teamlead/TeamTargets';
 import OrgDashboard from './pages/hod/OrgDashboard';
 import UserManagement from './pages/hod/UserManagement';
 import ZoneManagement from './pages/hod/ZoneManagement';
 import AllReports from './pages/hod/AllReports';
+import TargetManagement from './pages/hod/TargetManagement';
 import LoadingSpinner from './components/common/LoadingSpinner';
 
 const App = () => {
@@ -62,6 +64,10 @@ const App = () => {
             path="/employee-reports"
             element={<ProtectedRoute allowedRoles={['TEAM_LEAD']}><EmployeeReports /></ProtectedRoute>}
           />
+          <Route
+            path="/team-targets"
+            element={<ProtectedRoute allowedRoles={['TEAM_LEAD']}><TeamTargets /></ProtectedRoute>}
+          />
 
           {/* HOD Routes */}
           <Route
@@ -79,6 +85,10 @@ const App = () => {
           <Route
             path="/all-reports"
             element={<ProtectedRoute allowedRoles={['HOD']}><AllReports /></ProtectedRoute>}
+          />
+          <Route
+            path="/target-management"
+            element={<ProtectedRoute allowedRoles={['HOD']}><TargetManagement /></ProtectedRoute>}
           />
         </Route>
       </Route>

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, BarChart3, Users, MapPin,
-  ClipboardList, TrendingUp, Building2, ChevronLeft, ChevronRight,
+  ClipboardList, TrendingUp, Building2, ChevronLeft, ChevronRight, Target, Crosshair,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ROLE_LABELS } from '../../utils/constants';
@@ -16,10 +16,11 @@ const navByRole = {
     { to: '/profile', icon: Users, label: 'Profile' },
   ],
   TEAM_LEAD: [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/team-dashboard', icon: BarChart3, label: 'Team Dashboard' },
-    { to: '/employee-reports', icon: ClipboardList, label: 'Employee Reports' },
-    { to: '/profile', icon: Users, label: 'Profile' },
+    { to: '/dashboard',       icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/team-dashboard',  icon: BarChart3,        label: 'Team Dashboard' },
+    { to: '/team-targets',    icon: Crosshair,        label: 'Team Targets' },
+    { to: '/employee-reports',icon: ClipboardList,    label: 'Employee Reports' },
+    { to: '/profile',         icon: Users,            label: 'Profile' },
   ],
   HOD: [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -27,6 +28,7 @@ const navByRole = {
     { to: '/all-reports', icon: ClipboardList, label: 'All Reports' },
     { to: '/user-management', icon: Users, label: 'User Management' },
     { to: '/zone-management', icon: MapPin, label: 'Zone Management' },
+    { to: '/target-management', icon: Target, label: 'Monthly Targets' },
     { to: '/profile', icon: Users, label: 'Profile' },
   ],
 };
@@ -43,12 +45,17 @@ const Sidebar = ({ collapsed, onToggle }) => {
       )}
     >
       {/* Logo */}
-      <div className={classNames('flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700', collapsed ? 'justify-center' : 'gap-3')}>
-        <div className="flex-shrink-0 w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-          <BarChart3 className="w-5 h-5 text-white" />
-        </div>
-        {!collapsed && (
-          <span className="text-base font-bold text-gray-900 dark:text-white truncate">Task Tracker</span>
+      <div className={classNames('flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700', collapsed ? 'justify-center' : '')}>
+        {collapsed ? (
+          <div className="overflow-hidden flex-shrink-0" style={{ width: 36, height: 20 }}>
+            <img
+              src="/kanan-logo.svg"
+              alt="Kanan"
+              style={{ height: 20, width: 153, maxWidth: 'none' }}
+            />
+          </div>
+        ) : (
+          <img src="/kanan-logo.svg" alt="Kanan" style={{ height: 20 }} />
         )}
       </div>
 

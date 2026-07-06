@@ -1,22 +1,36 @@
 import { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { reportsAPI } from '../../api/reports';
+import { targetsAPI } from '../../api/targets';
 import { formatDate, getErrorMessage } from '../../utils/helpers';
 import { normalizeTracker } from '../../constants/tracker';
 import TrackerForm from './TrackerForm';
 import toast from 'react-hot-toast';
+
+const TOTAL_DAYS = 25 * 12;
 
 const EditReportModal = ({ report, onClose, onSaved, readOnly = false }) => {
   const [tracker, setTracker] = useState(normalizeTracker(null));
   const [remarks, setRemarks] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [dailyTarget, setDailyTarget] = useState(null);
 
   useEffect(() => {
-    if (report) {
-      setTracker(normalizeTracker(report.tasks));
-      setRemarks(report.remarks || '');
-    }
+    if (!report) return;
+    setTracker(normalizeTracker(report.tasks));
+    setRemarks(report.remarks || '');
+
+    // Fetch the RM's daily target from their yearly target
+    const uid = report.userId?._id || report.userId;
+    if (!uid) return;
+    const d = new Date(report.date);
+    targetsAPI.getForUser(uid, d.getMonth() + 1, d.getFullYear())
+      .then((res) => {
+        const t = res.data.data?.target;
+        if (t) setDailyTarget(Math.round((t.profiles || 0) / TOTAL_DAYS));
+      })
+      .catch(() => {});
   }, [report]);
 
   const handleSave = async () => {
@@ -61,7 +75,7 @@ const EditReportModal = ({ report, onClose, onSaved, readOnly = false }) => {
             </div>
           )}
 
-          <TrackerForm value={tracker} onChange={setTracker} readOnly={readOnly} />
+          <TrackerForm value={tracker} onChange={setTracker} readOnly={readOnly} dailyTarget={dailyTarget} />
 
           <div>
             <label className="label">Modifier Remarks</label>

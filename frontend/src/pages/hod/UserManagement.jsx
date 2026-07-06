@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, UserX, UserCheck, Search } from 'lucide-react';
+import { Plus, Edit2, UserX, UserCheck, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { usersAPI } from '../../api/users';
 import { zonesAPI } from '../../api/zones';
+import { targetsAPI } from '../../api/targets';
 import { ROLE_LABELS, ROLES } from '../../utils/constants';
 import { formatDate, getErrorMessage } from '../../utils/helpers';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+
+const TARGET_FIELDS = [
+  { key: 'profiles',        label: 'Profiles' },
+  { key: 'wt',              label: 'WT' },
+  { key: 'visaServices',    label: 'Visa Services',      hint: '25% of WT' },
+  { key: 'sop',             label: 'SOP',                hint: '15% of Profiles' },
+  { key: 'educationLoan',   label: 'Education Loan',     hint: '25% of WT' },
+  { key: 'gic',             label: 'GIC',                hint: '50% of Canada WT' },
+  { key: 'blockAccount',    label: 'Block Account',      hint: '50% of Germany WT' },
+  { key: 'forexRemittance', label: 'Forex / Remittance', hint: '5 / Month' },
+  { key: 'insurance',       label: 'Insurance',          hint: '2 / Month' },
+];
+
+const TOTAL_DAYS = 25 * 12;
+const round1 = (n) => Math.round(n * 10) / 10;
+const round2 = (n) => Math.round(n * 100) / 100;
+
+const emptyTargetForm = () => Object.fromEntries(TARGET_FIELDS.map((f) => [f.key, '']));
 
 const emptyForm = { name: '', email: '', password: '', role: 'RM', employeeId: '', zoneId: '', teamLeadId: '', joiningDate: '' };
 
@@ -22,6 +41,8 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [targetForm, setTargetForm] = useState(emptyTargetForm());
+  const [showTargets, setShowTargets] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -42,7 +63,7 @@ const UserManagement = () => {
 
   useEffect(() => { fetchData(); }, [showInactive, search, page]);
 
-  const openCreate = () => { setForm(emptyForm); setEditingUser(null); setShowForm(true); };
+  const openCreate = () => { setForm(emptyForm); setTargetForm(emptyTargetForm()); setShowTargets(false); setEditingUser(null); setShowForm(true); };
   const openEdit = (user) => {
     setForm({
       name: user.name, email: user.email, password: '', role: user.role,
@@ -60,14 +81,24 @@ const UserManagement = () => {
     try {
       const payload = { ...form };
       if (!payload.password) delete payload.password;
-      if (!payload.zoneId) delete payload.zoneId;
+      if (!payload.zoneId || payload.zoneId === 'all') delete payload.zoneId;
       if (!payload.teamLeadId) delete payload.teamLeadId;
 
       if (editingUser) {
         await usersAPI.update(editingUser._id, payload);
         toast.success('User updated');
       } else {
-        await usersAPI.create(payload);
+        const res = await usersAPI.create(payload);
+        const newUserId = res.data.data?._id;
+        // Save yearly targets if any field was filled
+        const hasTargets = TARGET_FIELDS.some((f) => Number(targetForm[f.key]) > 0);
+        if (newUserId && hasTargets) {
+          await targetsAPI.upsert({
+            userId: newUserId,
+            year: new Date().getFullYear(),
+            ...Object.fromEntries(TARGET_FIELDS.map((f) => [f.key, Number(targetForm[f.key]) || 0])),
+          });
+        }
         toast.success('User created');
       }
       setShowForm(false);
@@ -213,6 +244,7 @@ const UserManagement = () => {
                 <label className="label">Zone</label>
                 <select className="input-field" value={form.zoneId} onChange={(e) => setForm((f) => ({ ...f, zoneId: e.target.value }))}>
                   <option value="">Select zone...</option>
+                  <option value="all">All Zone</option>
                   {zones.map((z) => <option key={z._id} value={z._id}>{z.name}</option>)}
                 </select>
               </div>
@@ -223,6 +255,51 @@ const UserManagement = () => {
                     <option value="">Select team lead...</option>
                     {teamLeads.map((tl) => <option key={tl._id} value={tl._id}>{tl.name}</option>)}
                   </select>
+                </div>
+              )}
+
+              {/* Yearly targets — only for new RM creation */}
+              {!editingUser && form.role === 'RM' && (
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowTargets((v) => !v)}
+                    className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <span>Set Yearly Targets (optional)</span>
+                    {showTargets ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  {showTargets && (
+                    <div className="p-4 space-y-3">
+                      <p className="text-xs text-gray-400">Enter yearly totals. Monthly = ÷12 · Daily = ÷300 (25 days × 12 months)</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {TARGET_FIELDS.map((f) => {
+                          const y = Number(targetForm[f.key]) || 0;
+                          return (
+                            <div key={f.key}>
+                              <label className="label text-xs">
+                                {f.label}
+                                {f.hint && <span className="text-gray-400 ml-1">({f.hint})</span>}
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder="Yearly"
+                                className="input-field text-sm"
+                                value={targetForm[f.key]}
+                                onChange={(e) => setTargetForm((p) => ({ ...p, [f.key]: e.target.value }))}
+                              />
+                              {y > 0 && (
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  {round1(y / 12)}/mo · {Math.round(y / TOTAL_DAYS)}/day
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </form>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Eye, Edit2 } from 'lucide-react';
+import { Download, Eye } from 'lucide-react';
 import { reportsAPI } from '../../api/reports';
 import { usersAPI } from '../../api/users';
 import { PERIODS, REPORT_STATUS_COLORS } from '../../utils/constants';
@@ -17,7 +17,6 @@ const EmployeeReports = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [editReport, setEditReport] = useState(null);
-  const [viewOnly, setViewOnly] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -91,14 +90,9 @@ const EmployeeReports = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-500">{r.modifiedBy?.name || '-'}</td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        <button onClick={() => { setEditReport(r); setViewOnly(true); }} className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" title="View">
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => { setEditReport(r); setViewOnly(false); }} className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20" title="Edit">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <button onClick={() => setEditReport(r)} className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" title="View">
+                        <Eye className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -122,7 +116,7 @@ const EmployeeReports = () => {
       {editReport && (
         <EditReportModal
           report={editReport}
-          readOnly={viewOnly}
+          readOnly={true}
           onClose={() => setEditReport(null)}
           onSaved={() => { setEditReport(null); fetchData(); }}
         />

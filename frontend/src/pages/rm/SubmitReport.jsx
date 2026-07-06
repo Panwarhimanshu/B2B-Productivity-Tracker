@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, AlertCircle } from 'lucide-react';
 import { reportsAPI } from '../../api/reports';
+import { targetsAPI } from '../../api/targets';
 import { useAuth } from '../../context/AuthContext';
 import { emptyTracker } from '../../constants/tracker';
 import { getErrorMessage } from '../../utils/helpers';
 import TrackerForm from '../../components/reports/TrackerForm';
 import toast from 'react-hot-toast';
+
+const TOTAL_DAYS = 25 * 12; // 300
 
 const SubmitReport = () => {
   const navigate = useNavigate();
@@ -15,6 +18,21 @@ const SubmitReport = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [dailyTarget, setDailyTarget] = useState(null); // derived daily profiles target
+
+  // Fetch yearly target and pre-fill Daily Application Target
+  useEffect(() => {
+    const now = new Date();
+    targetsAPI.getMyWithActuals(now.getMonth() + 1, now.getFullYear())
+      .then((res) => {
+        const t = res.data.data?.target;
+        if (!t) return;
+        const daily = Math.round((t.profiles || 0) / TOTAL_DAYS);
+        setDailyTarget(daily);
+        setTracker((prev) => ({ ...prev, dailyApplicationTarget: daily }));
+      })
+      .catch(() => {}); // no target set — field stays blank
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,7 +93,7 @@ const SubmitReport = () => {
           </div>
         </div>
 
-        <TrackerForm value={tracker} onChange={setTracker} />
+        <TrackerForm value={tracker} onChange={setTracker} dailyTarget={dailyTarget} />
 
         <div className="flex gap-3">
           <button type="submit" className="btn-primary" disabled={submitting}>

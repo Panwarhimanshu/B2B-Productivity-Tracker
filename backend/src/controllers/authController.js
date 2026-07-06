@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../config/jwt');
 const { AppError } = require('../middleware/errorHandler');
+const cloudinary = require('../config/cloudinary');
 
 const login = async (req, res, next) => {
   try {
@@ -83,8 +84,7 @@ const getMe = async (req, res) => {
   res.json({ success: true, data: req.user });
 };
 
-// Max stored avatar size (~base64 of a 256px JPEG stays well under this)
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5MB base64 input limit
 
 const updateAvatar = async (req, res, next) => {
   try {
@@ -94,12 +94,26 @@ const updateAvatar = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'A valid image is required' });
     }
     if (Buffer.byteLength(avatar, 'utf8') > MAX_AVATAR_BYTES) {
-      return res.status(400).json({ success: false, message: 'Image is too large (max 2MB)' });
+      return res.status(400).json({ success: false, message: 'Image is too large (max 5MB)' });
     }
+
+    // Delete old avatar from Cloudinary if it exists
+    const existing = await User.findById(req.user._id).select('+avatarPublicId');
+    if (existing?.avatarPublicId) {
+      await cloudinary.uploader.destroy(existing.avatarPublicId).catch(() => {});
+    }
+
+    // Upload new image to Cloudinary
+    const result = await cloudinary.uploader.upload(avatar, {
+      folder:         'b2b-tracker/avatars',
+      public_id:      `user_${req.user._id}`,
+      overwrite:      true,
+      transformation: [{ width: 256, height: 256, crop: 'fill', gravity: 'face', quality: 'auto' }],
+    });
 
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { avatar },
+      { avatar: result.secure_url, avatarPublicId: result.public_id },
       { new: true, runValidators: true }
     );
 
@@ -111,9 +125,14 @@ const updateAvatar = async (req, res, next) => {
 
 const removeAvatar = async (req, res, next) => {
   try {
+    const existing = await User.findById(req.user._id).select('+avatarPublicId');
+    if (existing?.avatarPublicId) {
+      await cloudinary.uploader.destroy(existing.avatarPublicId).catch(() => {});
+    }
+
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { avatar: null },
+      { avatar: null, avatarPublicId: null },
       { new: true }
     );
     res.json({ success: true, message: 'Profile photo removed', data: user.toJSON() });

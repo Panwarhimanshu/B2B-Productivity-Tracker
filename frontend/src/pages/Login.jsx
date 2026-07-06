@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, BarChart3, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getErrorMessage } from '../utils/helpers';
 import toast from 'react-hot-toast';
@@ -33,20 +33,19 @@ const Login = () => {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-700 to-primary-900 flex-col justify-center items-center p-12 text-white">
         <div className="max-w-md text-center">
-          <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <BarChart3 className="w-10 h-10 text-white" />
+          <div className="bg-white rounded-2xl px-6 py-4 inline-block mx-auto mb-6">
+            <img src="/kanan-logo.svg" alt="Kanan" style={{ height: 28 }} />
           </div>
           <h1 className="text-3xl font-bold mb-4">B2B Task Tracker</h1>
-          <p className="text-primary-200 text-lg leading-relaxed">
-            Streamline your team's daily reporting, track performance, and drive productivity across all zones.
-          </p>
-          <div className="mt-10 grid grid-cols-3 gap-6 text-center">
-            {[['RMs', 'Track daily tasks'], ['Team Leads', 'Manage teams'], ['HODs', 'View all data']].map(([role, desc]) => (
-              <div key={role} className="bg-white/10 rounded-xl p-4">
-                <p className="font-semibold text-sm">{role}</p>
-                <p className="text-xs text-primary-300 mt-1">{desc}</p>
-              </div>
-            ))}
+
+          <div className="mt-2 mb-8">
+            <p className="text-2xl font-semibold text-white leading-snug">
+              "Track today.<br />Achieve tomorrow."
+            </p>
+            <div className="mt-4 w-10 h-0.5 bg-primary-400 mx-auto" />
+            <p className="text-primary-200 text-base leading-relaxed mt-4">
+              Every report brings your team one step closer to the goal.
+            </p>
           </div>
         </div>
       </div>
@@ -55,8 +54,8 @@ const Login = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50 dark:bg-gray-900">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div className="lg:hidden w-14 h-14 bg-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <BarChart3 className="w-7 h-7 text-white" />
+            <div className="lg:hidden mb-4 flex justify-center">
+              <img src="/kanan-logo.svg" alt="Kanan" style={{ height: 22 }} />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Sign in</h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Enter your credentials to access your account</p>

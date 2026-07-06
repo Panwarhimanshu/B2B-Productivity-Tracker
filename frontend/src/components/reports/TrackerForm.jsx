@@ -7,8 +7,8 @@ import {
 } from '../../constants/tracker';
 
 // Controlled editor / viewer for an RM Daily Tracker payload.
-// Props: value (tracker object), onChange(next), readOnly.
-const TrackerForm = ({ value, onChange, readOnly = false }) => {
+// Props: value (tracker object), onChange(next), readOnly, dailyTarget (auto-calculated from yearly).
+const TrackerForm = ({ value, onChange, readOnly = false, dailyTarget = null }) => {
   const data = value;
   const totals = useMemo(() => computeTotals(data), [data]);
 
@@ -56,18 +56,42 @@ const TrackerForm = ({ value, onChange, readOnly = false }) => {
   return (
     <div className="space-y-6">
       {/* Daily Application Target */}
-      <div className="flex items-center gap-3">
-        <label className="label mb-0">Daily Application Target</label>
-        {readOnly ? (
-          <span className="font-medium text-gray-800 dark:text-gray-200">{data.dailyApplicationTarget || '-'}</span>
-        ) : (
-          <input
-            type="number"
-            min={0}
-            className="input-field w-32"
-            value={data.dailyApplicationTarget ?? ''}
-            onChange={(e) => emit({ ...data, dailyApplicationTarget: e.target.value })}
-          />
+      <div className="card p-4 flex flex-wrap items-center gap-4">
+        <div>
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Daily Application Target</p>
+          {readOnly ? (
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                {dailyTarget !== null ? dailyTarget : (data.dailyApplicationTarget || '-')}
+              </span>
+              {dailyTarget !== null && (
+                <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
+                  Auto from yearly target
+                </span>
+              )}
+            </div>
+          ) : dailyTarget !== null ? (
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">{dailyTarget}</span>
+              <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
+                Auto from yearly target
+              </span>
+            </div>
+          ) : (
+            <input
+              type="number"
+              min={0}
+              className="input-field w-32"
+              value={data.dailyApplicationTarget ?? ''}
+              onChange={(e) => emit({ ...data, dailyApplicationTarget: e.target.value })}
+              placeholder="Enter target"
+            />
+          )}
+        </div>
+        {dailyTarget !== null && !readOnly && (
+          <p className="text-xs text-gray-400">
+            Based on yearly Profiles target ÷ 300 working days (25 days × 12 months)
+          </p>
         )}
       </div>
 
