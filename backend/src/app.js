@@ -18,9 +18,13 @@ app.use(helmet());
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',').map((o) => o.trim());
 
+const isLocalhost = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.some((o) => origin.startsWith(o))) return cb(null, true);
+    if (!origin) return cb(null, true);
+    if (process.env.NODE_ENV !== 'production' && isLocalhost(origin)) return cb(null, true);
+    if (allowedOrigins.some((o) => origin.startsWith(o))) return cb(null, true);
     cb(new Error('CORS: origin not allowed'));
   },
   credentials: true,

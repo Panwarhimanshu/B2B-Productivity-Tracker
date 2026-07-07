@@ -1,4 +1,7 @@
 require('dotenv').config();
+// Override broken localhost DNS (Windows misconfiguration) with public resolvers
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 const app = require('./src/app');
 const connectDB = require('./src/config/database');
 
