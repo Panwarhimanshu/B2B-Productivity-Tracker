@@ -1,15 +1,14 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Hash, MapPin, Calendar, Shield, Camera, Trash2, Loader2 } from 'lucide-react';
+import { User, Mail, Hash, MapPin, Calendar, Shield, Camera, Trash2, Loader2, CalendarDays } from 'lucide-react';
 import { formatDate } from '../utils/helpers';
 import { ROLE_LABELS } from '../utils/constants';
 import { authAPI } from '../api/auth';
 import toast from 'react-hot-toast';
 
-const MAX_FILE_BYTES = 5 * 1024 * 1024; // accept up to 5MB before resizing
-const AVATAR_SIZE = 256; // px, square output
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const AVATAR_SIZE = 256;
 
-// Resize an image file to a centered square and return a compressed JPEG data URL
 const resizeImage = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -22,8 +21,7 @@ const resizeImage = (file) =>
         const canvas = document.createElement('canvas');
         canvas.width = AVATAR_SIZE;
         canvas.height = AVATAR_SIZE;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+        canvas.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
         resolve(canvas.toDataURL('image/jpeg', 0.85));
       };
       img.onerror = () => reject(new Error('Could not read that image'));
@@ -33,17 +31,31 @@ const resizeImage = (file) =>
     reader.readAsDataURL(file);
   });
 
-const InfoRow = ({ icon: Icon, label, value }) => (
-  <div className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-gray-700 last:border-0">
-    <div className="mt-0.5 p-1.5 bg-primary-50 dark:bg-primary-900/30 rounded-lg">
-      <Icon className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+const InfoTile = ({ icon: Icon, label, value, accent }) => (
+  <div className={`rounded-2xl border p-4 flex items-start gap-3 ${
+    accent
+      ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-100 dark:border-primary-800'
+      : 'bg-gray-50 dark:bg-gray-700/40 border-gray-200 dark:border-gray-700'
+  }`}>
+    <div className={`mt-0.5 p-2 rounded-xl flex-shrink-0 ${
+      accent
+        ? 'bg-primary-100 dark:bg-primary-900/40'
+        : 'bg-white dark:bg-gray-700 shadow-sm'
+    }`}>
+      <Icon className={`w-4 h-4 ${accent ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400'}`} />
     </div>
-    <div>
-      <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="mt-0.5 text-sm font-medium text-gray-800 dark:text-gray-200">{value || '-'}</p>
+    <div className="min-w-0">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{value || '—'}</p>
     </div>
   </div>
 );
+
+const ROLE_COLORS = {
+  RM:        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+  TEAM_LEAD: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+  HOD:       'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300 border-violet-200 dark:border-violet-800',
+};
 
 const Profile = () => {
   const { user, setUser } = useAuth();
@@ -53,18 +65,10 @@ const Profile = () => {
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-selecting the same file later
+    e.target.value = '';
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please choose an image file');
-      return;
-    }
-    if (file.size > MAX_FILE_BYTES) {
-      toast.error('Image must be smaller than 5MB');
-      return;
-    }
-
+    if (!file.type.startsWith('image/')) { toast.error('Please choose an image file'); return; }
+    if (file.size > MAX_FILE_BYTES) { toast.error('Image must be smaller than 5MB'); return; }
     setUploading(true);
     try {
       const dataUrl = await resizeImage(file);
@@ -73,9 +77,7 @@ const Profile = () => {
       toast.success('Profile photo updated');
     } catch (err) {
       toast.error(err.response?.data?.message || err.message || 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
+    } finally { setUploading(false); }
   };
 
   const handleRemove = async () => {
@@ -86,85 +88,94 @@ const Profile = () => {
       toast.success('Profile photo removed');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Could not remove photo');
-    } finally {
-      setRemoving(false);
-    }
+    } finally { setRemoving(false); }
   };
 
+  const initial = user?.name?.charAt(0)?.toUpperCase() || '?';
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-5">
       <h1 className="text-xl font-bold text-gray-900 dark:text-white">My Profile</h1>
 
-      {/* Avatar section */}
-      <div className="card p-6 flex items-center gap-5">
-        <div className="relative flex-shrink-0">
-          <div className="w-20 h-20 rounded-full bg-primary-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
-            {user?.avatar ? (
-              <img src={user.avatar} alt={user?.name} className="w-full h-full object-cover" />
-            ) : (
-              user?.name?.charAt(0).toUpperCase()
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            aria-label="Change profile photo"
-            className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 shadow-sm text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-60 transition-colors"
-          >
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+      {/* Profile hero card */}
+      <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+        {/* Gradient banner */}
+        <div className="h-28 bg-gradient-to-br from-primary-600 via-primary-500 to-primary-400 relative">
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         </div>
 
-        <div className="min-w-0">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{user?.name}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
-          <span className="mt-2 inline-flex items-center gap-1 badge bg-primary-100 text-primary-800 dark:bg-primary-900/40 dark:text-primary-300">
-            <Shield className="w-3 h-3" />
-            {ROLE_LABELS[user?.role]}
-          </span>
-          <div className="mt-3 flex items-center gap-3 text-xs">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="font-medium text-primary-600 dark:text-primary-400 hover:underline disabled:opacity-60"
-            >
-              {uploading ? 'Uploading…' : user?.avatar ? 'Change photo' : 'Upload photo'}
-            </button>
-            {user?.avatar && (
+        {/* Avatar + info */}
+        <div className="bg-white dark:bg-gray-800 px-6 pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10">
+            {/* Avatar */}
+            <div className="relative flex-shrink-0">
+              <div className="w-20 h-20 rounded-2xl ring-4 ring-white dark:ring-gray-800 bg-primary-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden shadow-lg">
+                {user?.avatar
+                  ? <img src={user.avatar} alt={user?.name} className="w-full h-full object-cover" />
+                  : initial}
+              </div>
               <button
                 type="button"
-                onClick={handleRemove}
-                disabled={removing}
-                className="inline-flex items-center gap-1 font-medium text-red-600 dark:text-red-400 hover:underline disabled:opacity-60"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute -bottom-1 -right-1 p-1.5 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-60 transition-colors"
               >
-                <Trash2 className="w-3 h-3" />
-                {removing ? 'Removing…' : 'Remove'}
+                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
               </button>
-            )}
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            </div>
+
+            {/* Identity */}
+            <div className="flex-1 min-w-0 sm:pb-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{user?.name}</h2>
+                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${ROLE_COLORS[user?.role] || ROLE_COLORS.RM}`}>
+                  <Shield className="w-3 h-3" />{ROLE_LABELS[user?.role]}
+                </span>
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{user?.email}</p>
+            </div>
+
+            {/* Photo actions */}
+            <div className="flex items-center gap-2 sm:pb-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-60 transition-colors border border-primary-100 dark:border-primary-800"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                {uploading ? 'Uploading…' : user?.avatar ? 'Change photo' : 'Upload photo'}
+              </button>
+              {user?.avatar && (
+                <button
+                  type="button"
+                  onClick={handleRemove}
+                  disabled={removing}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-60 transition-colors border border-red-100 dark:border-red-800"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {removing ? 'Removing…' : 'Remove'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Details */}
-      <div className="card p-6">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Account Details</h3>
-        <InfoRow icon={User} label="Full Name" value={user?.name} />
-        <InfoRow icon={Mail} label="Email Address" value={user?.email} />
-        <InfoRow icon={Hash} label="Employee ID" value={user?.employeeId} />
-        <InfoRow icon={Shield} label="Role" value={ROLE_LABELS[user?.role]} />
-        <InfoRow icon={MapPin} label="Zone" value={user?.zoneId?.name} />
-        <InfoRow icon={User} label="Reporting Manager" value={user?.teamLeadId?.name} />
-        <InfoRow icon={Calendar} label="Joining Date" value={formatDate(user?.joiningDate)} />
-        <InfoRow icon={Calendar} label="Account Created" value={formatDate(user?.createdAt)} />
+      {/* Account details grid */}
+      <div className="card p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">Account Details</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <InfoTile icon={User}        label="Full Name"         value={user?.name}              accent />
+          <InfoTile icon={Mail}        label="Email Address"     value={user?.email}             accent />
+          <InfoTile icon={Hash}        label="Employee ID"       value={user?.employeeId} />
+          <InfoTile icon={Shield}      label="Role"              value={ROLE_LABELS[user?.role]} />
+          <InfoTile icon={MapPin}      label="Zone"              value={user?.zoneId?.name} />
+          <InfoTile icon={User}        label="Reporting Manager" value={user?.teamLeadId?.name} />
+          <InfoTile icon={Calendar}    label="Joining Date"      value={formatDate(user?.joiningDate)} />
+          <InfoTile icon={CalendarDays}label="Account Created"   value={formatDate(user?.createdAt)} />
+        </div>
       </div>
     </div>
   );
