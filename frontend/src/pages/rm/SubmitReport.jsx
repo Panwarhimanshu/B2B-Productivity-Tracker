@@ -64,24 +64,29 @@ const SubmitReport = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* A. RM Details */}
-        <div className="card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">Relationship Manager Details</p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+        <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+          {/* Coloured header band */}
+          <div className="bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-3 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary-100">Relationship Manager Details</p>
+            <span className="text-xs text-primary-200">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+          </div>
+
+          {/* Body */}
+          <div className="bg-white dark:bg-gray-800 px-6 py-5 flex flex-col sm:flex-row sm:items-center gap-6">
             {/* Avatar + identity */}
-            <div className="flex items-center gap-4 flex-1">
-              <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center flex-shrink-0">
-                <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div className="w-14 h-14 rounded-2xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center flex-shrink-0 shadow-inner">
+                <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                   {user?.name?.charAt(0)?.toUpperCase() || 'R'}
                 </span>
               </div>
-              <div className="min-w-0">
-                <p className="text-base font-semibold text-gray-900 dark:text-white truncate">{user?.name || '—'}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <div className="min-w-0 flex-1">
+                <p className="text-lg font-bold text-gray-900 dark:text-white truncate leading-tight">{user?.name || '—'}</p>
+                <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-medium text-gray-600 dark:text-gray-300">
                     <Hash className="w-3 h-3" />{user?.employeeId || '—'}
                   </span>
-                  <span className="text-gray-300 dark:text-gray-600">·</span>
-                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-medium text-gray-600 dark:text-gray-300">
                     <Mail className="w-3 h-3" />{user?.email || '—'}
                   </span>
                 </div>
@@ -89,14 +94,14 @@ const SubmitReport = () => {
             </div>
 
             {/* Date picker */}
-            <div className="sm:w-52 flex-shrink-0">
-              <label className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5" htmlFor="report-date">
-                <Calendar className="w-3.5 h-3.5" />Report Date <span className="text-red-500">*</span>
+            <div className="flex-shrink-0">
+              <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2" htmlFor="report-date">
+                <Calendar className="w-3.5 h-3.5" />Report Date <span className="text-red-400">*</span>
               </label>
               <input
                 id="report-date"
                 type="date"
-                className="input-field"
+                className="border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 max={new Date().toISOString().split('T')[0]}
