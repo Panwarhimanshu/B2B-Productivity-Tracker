@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, AlertCircle } from 'lucide-react';
+import { Send, AlertCircle, Calendar, User, Hash, Mail } from 'lucide-react';
 import { reportsAPI } from '../../api/reports';
 import { targetsAPI } from '../../api/targets';
 import { useAuth } from '../../context/AuthContext';
@@ -48,13 +48,6 @@ const SubmitReport = () => {
     }
   };
 
-  const detail = (label, val) => (
-    <div>
-      <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="font-medium text-gray-800 dark:text-gray-200">{val || '-'}</p>
-    </div>
-  );
-
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <div>
@@ -71,11 +64,35 @@ const SubmitReport = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* A. RM Details */}
-        <div className="card p-4">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">Relationship Manager Details</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
-            <div>
-              <label className="label" htmlFor="report-date">Date <span className="text-red-500">*</span></label>
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">Relationship Manager Details</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+            {/* Avatar + identity */}
+            <div className="flex items-center gap-4 flex-1">
+              <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center flex-shrink-0">
+                <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'R'}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-base font-semibold text-gray-900 dark:text-white truncate">{user?.name || '—'}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <Hash className="w-3 h-3" />{user?.employeeId || '—'}
+                  </span>
+                  <span className="text-gray-300 dark:text-gray-600">·</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <Mail className="w-3 h-3" />{user?.email || '—'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Date picker */}
+            <div className="sm:w-52 flex-shrink-0">
+              <label className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5" htmlFor="report-date">
+                <Calendar className="w-3.5 h-3.5" />Report Date <span className="text-red-500">*</span>
+              </label>
               <input
                 id="report-date"
                 type="date"
@@ -86,9 +103,6 @@ const SubmitReport = () => {
                 required
               />
             </div>
-            {detail('Name of RM', user?.name)}
-            {detail('Employee ID', user?.employeeId)}
-            {detail('Email', user?.email)}
           </div>
         </div>
 
