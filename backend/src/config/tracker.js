@@ -6,7 +6,6 @@ const COUNTRIES = ['Canada', 'UK', 'USA', 'Germany', 'Dubai', 'Europe'];
 
 // Section 1 – Profile grid columns (per country). `num: true` => aggregated as a sum.
 const PROFILE_COLUMNS = [
-  { key: 'target', label: 'Target', num: true },
   { key: 'committed', label: 'Committed (Morning)', num: true },
   { key: 'achieved', label: 'Achieved (EOD)', num: true },
   { key: 'status', label: 'Status', num: false },

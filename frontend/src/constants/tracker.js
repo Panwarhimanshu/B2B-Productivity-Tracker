@@ -5,7 +5,6 @@ export const COUNTRIES = ['Canada', 'UK', 'USA', 'Germany', 'Dubai', 'Europe'];
 
 // Section 1 – Profile grid columns (per country).
 export const PROFILE_COLUMNS = [
-  { key: 'target', label: 'Target', type: 'number' },
   { key: 'committed', label: 'Committed (Morning)', type: 'number' },
   { key: 'achieved', label: 'Achieved (EOD)', type: 'number' },
   { key: 'status', label: 'Status', type: 'status' },
