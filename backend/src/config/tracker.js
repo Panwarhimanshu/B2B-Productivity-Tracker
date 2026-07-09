@@ -8,12 +8,12 @@ const COUNTRIES = ['Canada', 'UK', 'USA', 'Germany', 'Dubai', 'Europe'];
 const PROFILE_COLUMNS = [
   { key: 'committed', label: 'Committed (Morning)', num: true },
   { key: 'achieved', label: 'Achieved (EOD)', num: true },
+  { key: 'wt', label: 'WT', num: true },
   { key: 'status', label: 'Status', num: false },
   { key: 'dropOff', label: 'Drop-off %', num: true },
   { key: 'reason', label: 'Reason (If Any)', num: false },
   { key: 'applications', label: 'Applications', num: true },
   { key: 'offer', label: 'Offer', num: true },
-  { key: 'wt', label: 'WT', num: true },
   { key: 'visa', label: 'Visa', num: true },
   { key: 'rejection', label: 'Rejection', num: true },
   { key: 'refund', label: 'Refund', num: true },
