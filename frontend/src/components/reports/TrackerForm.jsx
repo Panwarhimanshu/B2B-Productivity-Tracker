@@ -190,7 +190,8 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
       {/* Communication */}
       <div className="card p-4">
         <SectionTitle>Communication</SectionTitle>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {/* Counts row */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
           {COMMUNICATION_ITEMS.map((c) => (
             <div key={c.key}>
               <label className="label">{c.label}</label>
@@ -203,6 +204,27 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
                   className="input-field"
                   value={data.communication?.[c.key] ?? ''}
                   onChange={(e) => updateComm(c.key, e.target.value)}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+        {/* Link inputs for Zoom / Calls / Meetings */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+          {COMMUNICATION_ITEMS.filter((c) => c.linkKey).map((c) => (
+            <div key={c.linkKey}>
+              <label className="label">{c.label} — {c.linkLabel}</label>
+              {readOnly ? (
+                data.communication?.[c.linkKey]
+                  ? <a href={data.communication[c.linkKey]} target="_blank" rel="noopener noreferrer" className="text-sm text-primary-600 dark:text-primary-400 underline break-all">{data.communication[c.linkKey]}</a>
+                  : <p className="text-sm text-gray-400">—</p>
+              ) : (
+                <input
+                  type="url"
+                  className="input-field"
+                  placeholder="https://..."
+                  value={data.communication?.[c.linkKey] ?? ''}
+                  onChange={(e) => updateComm(c.linkKey, e.target.value)}
                 />
               )}
             </div>

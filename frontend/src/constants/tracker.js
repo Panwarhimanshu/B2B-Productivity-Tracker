@@ -36,11 +36,11 @@ export const FOLLOW_UP_TASKS = [
 ];
 
 export const COMMUNICATION_ITEMS = [
-  { key: 'zoomMeetings', label: 'Zoom Meetings' },
-  { key: 'callsMade', label: 'Calls Made' },
-  { key: 'meetings', label: 'Meetings' },
-  { key: 'kApplyDiscussion', label: 'K Apply Discussion' },
-  { key: 'whatsappQuery', label: 'WhatsApp Query' },
+  { key: 'zoomMeetings',    label: 'Zoom Meetings',      linkKey: 'zoomMeetingLink',  linkLabel: 'Recording / Meeting Link' },
+  { key: 'callsMade',       label: 'Calls Made',         linkKey: 'callsSheetLink',   linkLabel: 'Google Sheet Link' },
+  { key: 'meetings',        label: 'Meetings',           linkKey: 'meetingMomLink',   linkLabel: 'MOM Link' },
+  { key: 'kApplyDiscussion',label: 'K Apply Discussion' },
+  { key: 'whatsappQuery',   label: 'WhatsApp Query' },
 ];
 
 export const num = (v) => {
@@ -57,7 +57,11 @@ export const emptyTracker = () => ({
     return row;
   }),
   followUpTasks: FOLLOW_UP_TASKS.map((task) => ({ task, committed: '', completed: '', remarks: '' })),
-  communication: COMMUNICATION_ITEMS.reduce((acc, c) => ({ ...acc, [c.key]: '' }), {}),
+  communication: COMMUNICATION_ITEMS.reduce((acc, c) => ({
+    ...acc,
+    [c.key]: '',
+    ...(c.linkKey ? { [c.linkKey]: '' } : {}),
+  }), {}),
   extraInitiatives: { leadsCommitted: '', leadsGenerated: '' },
   summary: '',
 });
