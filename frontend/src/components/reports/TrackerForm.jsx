@@ -233,40 +233,42 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
       </div>
 
       {/* Communication */}
-      <div className="card p-4">
+      <div className="card p-5">
         <SectionTitle>Communication</SectionTitle>
-        {/* Counts row */}
+        {/* Count tiles */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
           {COMMUNICATION_ITEMS.map((c) => (
-            <div key={c.key}>
-              <label className="label">{c.label}</label>
+            <div key={c.key} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-3 flex flex-col gap-2">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide leading-tight">{c.label}</p>
               {readOnly ? (
-                <p className="font-medium text-gray-800 dark:text-gray-200">{data.communication?.[c.key] || '0'}</p>
+                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{data.communication?.[c.key] || '0'}</p>
               ) : (
                 <input
                   type="number"
                   min={0}
-                  className="input-field"
+                  className="w-full text-xl font-bold text-gray-800 dark:text-gray-100 bg-transparent border-0 border-b-2 border-gray-200 dark:border-gray-600 focus:border-primary-400 focus:outline-none pb-0.5 transition-colors"
                   value={data.communication?.[c.key] ?? ''}
                   onChange={(e) => updateComm(c.key, e.target.value)}
+                  placeholder="0"
                 />
               )}
             </div>
           ))}
         </div>
-        {/* Link inputs for Zoom / Calls / Meetings */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+        {/* Link inputs */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
           {COMMUNICATION_ITEMS.filter((c) => c.linkKey).map((c) => (
-            <div key={c.linkKey}>
-              <label className="label">{c.label} — {c.linkLabel}</label>
+            <div key={c.linkKey} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-3">
+              <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{c.label}</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-1.5">{c.linkLabel}</p>
               {readOnly ? (
                 data.communication?.[c.linkKey]
-                  ? <a href={data.communication[c.linkKey]} target="_blank" rel="noopener noreferrer" className="text-sm text-primary-600 dark:text-primary-400 underline break-all">{data.communication[c.linkKey]}</a>
-                  : <p className="text-sm text-gray-400">—</p>
+                  ? <a href={data.communication[c.linkKey]} target="_blank" rel="noopener noreferrer" className="text-xs text-primary-600 dark:text-primary-400 underline break-all">{data.communication[c.linkKey]}</a>
+                  : <p className="text-xs text-gray-400">—</p>
               ) : (
                 <input
                   type="url"
-                  className="input-field"
+                  className="w-full text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                   placeholder="https://..."
                   value={data.communication?.[c.linkKey] ?? ''}
                   onChange={(e) => updateComm(c.linkKey, e.target.value)}
@@ -280,25 +282,32 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
       {/* Section 2: Follow-up tasks */}
       <div className="card p-4">
         <SectionTitle hint="Completion status of daily follow-up tasks">Section 2 · Follow-up Tasks</SectionTitle>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+          <table className="w-full text-xs border-collapse">
             <thead>
-              <tr className="text-left text-gray-500 dark:text-gray-400">
-                <th className="px-2 py-2 font-medium">Task</th>
-                <th className="px-2 py-2 font-medium">Committed</th>
-                <th className="px-2 py-2 font-medium">Completed</th>
-                <th className="px-2 py-2 font-medium">Remarks</th>
+              <tr>
+                <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 w-1/2">Task</th>
+                <th className="px-4 py-3 text-center font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-b border-gray-200 dark:border-gray-600">Committed</th>
+                <th className="px-4 py-3 text-center font-semibold bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-b border-gray-200 dark:border-gray-600">Completed</th>
+                <th className="px-4 py-3 text-center font-semibold bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600">Remarks</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {data.followUpTasks.map((row, idx) => (
-                <tr key={row.task}>
-                  <td className="px-2 py-1.5 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{row.task}</td>
-                  <td className="px-2 py-1.5">{cellInput(row.committed, (v) => updateFollowUp(idx, 'committed', v), 'number')}</td>
-                  <td className="px-2 py-1.5">{cellInput(row.completed, (v) => updateFollowUp(idx, 'completed', v), 'number')}</td>
-                  <td className="px-2 py-1.5">{cellInput(row.remarks, (v) => updateFollowUp(idx, 'remarks', v), 'text')}</td>
-                </tr>
-              ))}
+            <tbody>
+              {data.followUpTasks.map((row, idx) => {
+                const done = Number(row.completed) >= Number(row.committed) && Number(row.committed) > 0;
+                return (
+                  <tr key={row.task} className="group hover:bg-primary-50/40 dark:hover:bg-primary-900/10 transition-colors border-b border-gray-100 dark:border-gray-700/60 last:border-0">
+                    <td className="px-4 py-2.5 font-medium text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                      {done && <span className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />}
+                      {!done && <span className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600 flex-shrink-0" />}
+                      {row.task}
+                    </td>
+                    <td className="px-4 py-2.5 text-center">{cellInput(row.committed, (v) => updateFollowUp(idx, 'committed', v), 'number')}</td>
+                    <td className="px-4 py-2.5 text-center">{cellInput(row.completed, (v) => updateFollowUp(idx, 'completed', v), 'number')}</td>
+                    <td className="px-4 py-2.5 text-center">{cellInput(row.remarks, (v) => updateFollowUp(idx, 'remarks', v), 'text')}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
