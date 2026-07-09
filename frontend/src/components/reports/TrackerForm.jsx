@@ -314,24 +314,37 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
       </div>
 
       {/* Section 3: Extra initiatives */}
-      <div className="card p-4">
+      <div className="card p-5">
         <SectionTitle>Section 3 · Extra Initiatives</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 max-w-md">
+        <div className="grid grid-cols-2 gap-3 max-w-sm">
           {[
-            { key: 'leadsCommitted', label: 'Leads Committed' },
-            { key: 'leadsGenerated', label: 'Leads Generated' },
+            { key: 'leadsCommitted', label: 'Leads Committed', color: 'blue' },
+            { key: 'leadsGenerated', label: 'Leads Generated', color: 'green' },
           ].map((f) => (
-            <div key={f.key}>
-              <label className="label">{f.label}</label>
+            <div key={f.key} className={`rounded-xl border p-4 flex flex-col gap-2 ${
+              f.color === 'blue'
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800'
+                : 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800'
+            }`}>
+              <p className={`text-[11px] font-semibold uppercase tracking-wide ${
+                f.color === 'blue' ? 'text-blue-500 dark:text-blue-400' : 'text-green-500 dark:text-green-400'
+              }`}>{f.label}</p>
               {readOnly ? (
-                <p className="font-medium text-gray-800 dark:text-gray-200">{data.extraInitiatives?.[f.key] || '0'}</p>
+                <p className={`text-3xl font-bold leading-none ${
+                  f.color === 'blue' ? 'text-blue-600 dark:text-blue-400' : 'text-green-600 dark:text-green-400'
+                }`}>{data.extraInitiatives?.[f.key] || '0'}</p>
               ) : (
                 <input
                   type="number"
                   min={0}
-                  className="input-field"
+                  className={`w-full text-2xl font-bold bg-transparent border-0 border-b-2 focus:outline-none pb-0.5 transition-colors placeholder:text-gray-300 ${
+                    f.color === 'blue'
+                      ? 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700 focus:border-blue-500'
+                      : 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-700 focus:border-green-500'
+                  }`}
                   value={data.extraInitiatives?.[f.key] ?? ''}
                   onChange={(e) => updateExtra(f.key, e.target.value)}
+                  placeholder="0"
                 />
               )}
             </div>
@@ -340,25 +353,35 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
       </div>
 
       {/* Summary */}
-      <div className="card p-4">
+      <div className="card p-5">
         <SectionTitle hint="Totals auto-calculated from Section 1">Summary</SectionTitle>
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           {['applications', 'offer', 'wt', 'visa', 'rejection', 'refund', 'defer', 'commission'].map((k) => {
             const label = PROFILE_COLUMNS.find((c) => c.key === k)?.label || k;
+            const val = totals[k] ?? 0;
+            const positive = val > 0;
             return (
-              <span key={k} className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-xs">
-                <span className="text-gray-500 dark:text-gray-400">{label}: </span>
-                <span className="font-semibold text-gray-800 dark:text-gray-200">{totals[k] ?? 0}</span>
-              </span>
+              <div key={k} className={`rounded-xl border px-3 py-2.5 flex flex-col gap-0.5 transition-colors ${
+                positive
+                  ? 'bg-violet-50 dark:bg-violet-900/20 border-violet-100 dark:border-violet-800'
+                  : 'bg-gray-50 dark:bg-gray-700/40 border-gray-200 dark:border-gray-700'
+              }`}>
+                <p className={`text-[10px] font-semibold uppercase tracking-wide ${
+                  positive ? 'text-violet-500 dark:text-violet-400' : 'text-gray-400 dark:text-gray-500'
+                }`}>{label}</p>
+                <p className={`text-2xl font-bold leading-none ${
+                  positive ? 'text-violet-700 dark:text-violet-300' : 'text-gray-300 dark:text-gray-600'
+                }`}>{val}</p>
+              </div>
             );
           })}
         </div>
-        <label className="label">One-line summary from RM</label>
+        <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 block mb-2">One-line summary from RM</label>
         {readOnly ? (
-          <p className="text-gray-700 dark:text-gray-300">{data.summary || '-'}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/40 rounded-xl px-4 py-3 border border-gray-200 dark:border-gray-700">{data.summary || '—'}</p>
         ) : (
           <textarea
-            className="input-field resize-none"
+            className="w-full text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
             rows={2}
             value={data.summary ?? ''}
             onChange={(e) => emit({ ...data, summary: e.target.value })}
