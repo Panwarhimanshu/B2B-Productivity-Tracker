@@ -6,9 +6,16 @@ import {
   computeTotals,
 } from '../../constants/tracker';
 
+const TOTAL_DAYS = 300; // 25 days × 12 months
+
 // Controlled editor / viewer for an RM Daily Tracker payload.
-// Props: value (tracker object), onChange(next), readOnly, dailyTarget (auto-calculated from yearly).
-const TrackerForm = ({ value, onChange, readOnly = false, dailyTarget = null }) => {
+// Props: value (tracker object), onChange(next), readOnly, yearlyTarget ({ profiles, wt } yearly values).
+const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null }) => {
+  const targets = yearlyTarget ? {
+    daily:   { profiles: Math.round((yearlyTarget.profiles || 0) / TOTAL_DAYS), wt: Math.round((yearlyTarget.wt || 0) / TOTAL_DAYS) },
+    monthly: { profiles: Math.round((yearlyTarget.profiles || 0) / 12),         wt: Math.round((yearlyTarget.wt || 0) / 12)         },
+    yearly:  { profiles: yearlyTarget.profiles || 0,                             wt: yearlyTarget.wt || 0                            },
+  } : null;
   const data = value;
   const totals = useMemo(() => computeTotals(data), [data]);
 
@@ -55,43 +62,52 @@ const TrackerForm = ({ value, onChange, readOnly = false, dailyTarget = null }) 
 
   return (
     <div className="space-y-6">
-      {/* Daily Application Target */}
-      <div className="card p-4 flex flex-wrap items-center gap-4">
-        <div>
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Daily Application Target</p>
-          {readOnly ? (
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                {dailyTarget !== null ? dailyTarget : (data.dailyApplicationTarget || '-')}
-              </span>
-              {dailyTarget !== null && (
-                <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
-                  Auto from yearly target
-                </span>
-              )}
-            </div>
-          ) : dailyTarget !== null ? (
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">{dailyTarget}</span>
-              <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium">
-                Auto from yearly target
-              </span>
-            </div>
-          ) : (
-            <input
-              type="number"
-              min={0}
-              className="input-field w-32"
-              value={data.dailyApplicationTarget ?? ''}
-              onChange={(e) => emit({ ...data, dailyApplicationTarget: e.target.value })}
-              placeholder="Enter target"
-            />
-          )}
-        </div>
-        {dailyTarget !== null && !readOnly && (
-          <p className="text-xs text-gray-400">
-            Based on yearly Profiles target ÷ 300 working days (25 days × 12 months)
-          </p>
+      {/* Target Reference Table */}
+      <div className="card p-4">
+        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Application Targets</p>
+        {targets ? (
+          <div className="overflow-x-auto">
+            <table className="text-sm border-collapse">
+              <thead>
+                <tr>
+                  <th colSpan={2} className="border border-gray-300 dark:border-gray-600 px-6 py-2 text-center bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">Daily Target</th>
+                  <th colSpan={2} className="border border-gray-300 dark:border-gray-600 px-6 py-2 text-center bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">Monthly Target</th>
+                  <th colSpan={2} className="border border-gray-300 dark:border-gray-600 px-6 py-2 text-center bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">Yearly Target</th>
+                </tr>
+                <tr>
+                  {['Profile', 'Wire Transfer', 'Profile', 'Wire Transfer', 'Profile', 'Wire Transfer'].map((h, i) => (
+                    <th key={i} className="border border-gray-300 dark:border-gray-600 px-6 py-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-bold text-primary-600 dark:text-primary-400 text-base">{targets.daily.profiles}</td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-bold text-primary-600 dark:text-primary-400 text-base">{targets.daily.wt}</td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-semibold text-blue-600 dark:text-blue-400">{targets.monthly.profiles}</td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-semibold text-blue-600 dark:text-blue-400">{targets.monthly.wt}</td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-semibold text-gray-700 dark:text-gray-300">{targets.yearly.profiles}</td>
+                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-semibold text-gray-700 dark:text-gray-300">{targets.yearly.wt}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Daily Application Target</p>
+            {readOnly ? (
+              <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">{data.dailyApplicationTarget || '-'}</span>
+            ) : (
+              <input
+                type="number"
+                min={0}
+                className="input-field w-32"
+                value={data.dailyApplicationTarget ?? ''}
+                onChange={(e) => emit({ ...data, dailyApplicationTarget: e.target.value })}
+                placeholder="Enter target"
+              />
+            )}
+          </div>
         )}
       </div>
 

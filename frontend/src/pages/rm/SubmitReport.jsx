@@ -18,20 +18,19 @@ const SubmitReport = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [dailyTarget, setDailyTarget] = useState(null); // derived daily profiles target
+  const [yearlyTarget, setYearlyTarget] = useState(null);
 
-  // Fetch yearly target and pre-fill Daily Application Target
   useEffect(() => {
     const now = new Date();
     targetsAPI.getMyWithActuals(now.getMonth() + 1, now.getFullYear())
       .then((res) => {
         const t = res.data.data?.target;
         if (!t) return;
+        setYearlyTarget(t);
         const daily = Math.round((t.profiles || 0) / TOTAL_DAYS);
-        setDailyTarget(daily);
         setTracker((prev) => ({ ...prev, dailyApplicationTarget: daily }));
       })
-      .catch(() => {}); // no target set — field stays blank
+      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e) => {
@@ -93,7 +92,7 @@ const SubmitReport = () => {
           </div>
         </div>
 
-        <TrackerForm value={tracker} onChange={setTracker} dailyTarget={dailyTarget} />
+        <TrackerForm value={tracker} onChange={setTracker} yearlyTarget={yearlyTarget} />
 
         <div className="flex gap-3">
           <button type="submit" className="btn-primary" disabled={submitting}>

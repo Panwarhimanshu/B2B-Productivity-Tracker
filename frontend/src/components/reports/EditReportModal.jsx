@@ -7,28 +7,25 @@ import { normalizeTracker } from '../../constants/tracker';
 import TrackerForm from './TrackerForm';
 import toast from 'react-hot-toast';
 
-const TOTAL_DAYS = 25 * 12;
-
 const EditReportModal = ({ report, onClose, onSaved, readOnly = false }) => {
   const [tracker, setTracker] = useState(normalizeTracker(null));
   const [remarks, setRemarks] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [dailyTarget, setDailyTarget] = useState(null);
+  const [yearlyTarget, setYearlyTarget] = useState(null);
 
   useEffect(() => {
     if (!report) return;
     setTracker(normalizeTracker(report.tasks));
     setRemarks(report.remarks || '');
 
-    // Fetch the RM's daily target from their yearly target
     const uid = report.userId?._id || report.userId;
     if (!uid) return;
     const d = new Date(report.date);
     targetsAPI.getForUser(uid, d.getMonth() + 1, d.getFullYear())
       .then((res) => {
         const t = res.data.data?.target;
-        if (t) setDailyTarget(Math.round((t.profiles || 0) / TOTAL_DAYS));
+        if (t) setYearlyTarget(t);
       })
       .catch(() => {});
   }, [report]);
@@ -75,7 +72,7 @@ const EditReportModal = ({ report, onClose, onSaved, readOnly = false }) => {
             </div>
           )}
 
-          <TrackerForm value={tracker} onChange={setTracker} readOnly={readOnly} dailyTarget={dailyTarget} />
+          <TrackerForm value={tracker} onChange={setTracker} readOnly={readOnly} yearlyTarget={yearlyTarget} />
 
           <div>
             <label className="label">Modifier Remarks</label>
