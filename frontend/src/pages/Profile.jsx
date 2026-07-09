@@ -106,27 +106,27 @@ const Profile = () => {
 
         {/* Avatar + info */}
         <div className="bg-white dark:bg-gray-800 px-6 pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10">
-            {/* Avatar */}
-            <div className="relative flex-shrink-0">
-              <div className="w-20 h-20 rounded-2xl ring-4 ring-white dark:ring-gray-800 bg-primary-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden shadow-lg">
-                {user?.avatar
-                  ? <img src={user.avatar} alt={user?.name} className="w-full h-full object-cover" />
-                  : initial}
-              </div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="absolute -bottom-1 -right-1 p-1.5 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-60 transition-colors"
-              >
-                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-              </button>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          {/* Avatar overlaps banner */}
+          <div className="relative -mt-10 mb-3 w-fit">
+            <div className="w-20 h-20 rounded-2xl ring-4 ring-white dark:ring-gray-800 bg-primary-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden shadow-lg">
+              {user?.avatar
+                ? <img src={user.avatar} alt={user?.name} className="w-full h-full object-cover" />
+                : initial}
             </div>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute -bottom-1.5 -right-1.5 p-1.5 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow text-gray-500 hover:text-primary-600 dark:hover:text-primary-400 disabled:opacity-60 transition-colors"
+            >
+              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+            </button>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          </div>
 
-            {/* Identity */}
-            <div className="flex-1 min-w-0 sm:pb-1">
+          {/* Identity + actions row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">{user?.name}</h2>
                 <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full border ${ROLE_COLORS[user?.role] || ROLE_COLORS.RM}`}>
@@ -136,8 +136,7 @@ const Profile = () => {
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{user?.email}</p>
             </div>
 
-            {/* Photo actions */}
-            <div className="flex items-center gap-2 sm:pb-1">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
