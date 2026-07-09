@@ -50,21 +50,54 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
   const updateComm = (key, val) => emit({ ...data, communication: { ...data.communication, [key]: val } });
   const updateExtra = (key, val) => emit({ ...data, extraInitiatives: { ...data.extraInitiatives, [key]: val } });
 
+  const COL_GROUP = {
+    committed: 'blue', achieved: 'green', wt: 'green',
+    status: 'amber', dropOff: 'amber', reason: 'amber',
+    applications: 'violet', offer: 'violet', visa: 'violet',
+    rejection: 'violet', refund: 'violet', defer: 'violet', commission: 'violet',
+  };
+  const COL_HEADER_CLS = {
+    blue:   'bg-blue-50   dark:bg-blue-900/30   text-blue-700   dark:text-blue-300',
+    green:  'bg-green-50  dark:bg-green-900/30  text-green-700  dark:text-green-300',
+    amber:  'bg-amber-50  dark:bg-amber-900/30  text-amber-700  dark:text-amber-300',
+    violet: 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300',
+  };
+  const STATUS_CLS = {
+    'Achieved': 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700',
+    'On Track': 'bg-blue-100  dark:bg-blue-900/40  text-blue-700  dark:text-blue-300  border-blue-200  dark:border-blue-700',
+    'At Risk':  'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700',
+    '':         'bg-gray-50   dark:bg-gray-700      text-gray-400                      border-gray-200  dark:border-gray-600',
+  };
+
   const cellInput = (val, onChangeVal, type = 'number') => {
-    if (readOnly) return <span className="text-gray-700 dark:text-gray-300">{val || (val === 0 ? '0' : '-')}</span>;
     if (type === 'status') {
+      const cls = STATUS_CLS[val || ''] || STATUS_CLS[''];
+      if (readOnly) {
+        return val
+          ? <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${cls}`}>{val}</span>
+          : <span className="text-gray-300 dark:text-gray-600">—</span>;
+      }
       return (
-        <select className="input-field py-1 text-xs min-w-[110px]" value={val || ''} onChange={(e) => onChangeVal(e.target.value)}>
+        <select
+          className={`text-[11px] font-semibold border rounded-full px-2 py-0.5 cursor-pointer outline-none focus:ring-2 focus:ring-primary-400 transition-colors ${cls}`}
+          value={val || ''}
+          onChange={(e) => onChangeVal(e.target.value)}
+        >
           <option value="">—</option>
           {STATUS_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
       );
     }
+    if (readOnly) {
+      return <span className="text-gray-700 dark:text-gray-300 font-medium">{val !== '' && val != null ? val : '—'}</span>;
+    }
     return (
       <input
         type={type === 'number' ? 'number' : 'text'}
         min={type === 'number' ? 0 : undefined}
-        className={`input-field py-1 text-xs ${type === 'number' ? 'w-20' : 'min-w-[140px]'}`}
+        className={`border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700/50 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all text-xs py-1.5 ${
+          type === 'number' ? 'w-16 text-center px-1' : 'w-28 px-2'
+        }`}
         value={val ?? ''}
         onChange={(e) => onChangeVal(e.target.value)}
       />
@@ -153,22 +186,28 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
       {/* Section 1: Profile grid */}
       <div className="card p-4">
         <SectionTitle hint="Daily commitment vs actual, per country">Section 1 · Profile</SectionTitle>
-        <div className="overflow-x-auto">
-          <table className="text-xs border-collapse">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+          <table className="text-xs w-full border-collapse">
             <thead>
-              <tr className="text-left text-gray-500 dark:text-gray-400">
-                <th className="px-2 py-2 sticky left-0 bg-white dark:bg-gray-800 font-medium">Country</th>
+              <tr>
+                <th className="px-3 py-3 sticky left-0 z-10 bg-gray-100 dark:bg-gray-700 text-left text-gray-600 dark:text-gray-300 font-semibold border-b border-r border-gray-200 dark:border-gray-600 whitespace-nowrap">
+                  Country
+                </th>
                 {PROFILE_COLUMNS.map((c) => (
-                  <th key={c.key} className="px-2 py-2 font-medium whitespace-nowrap">{c.label}</th>
+                  <th key={c.key} className={`px-3 py-3 text-center font-semibold whitespace-nowrap border-b border-gray-200 dark:border-gray-600 ${COL_HEADER_CLS[COL_GROUP[c.key]] || ''}`}>
+                    {c.label}
+                  </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody>
               {data.profile.map((row, idx) => (
-                <tr key={row.country}>
-                  <td className="px-2 py-1.5 sticky left-0 bg-white dark:bg-gray-800 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap">{row.country}</td>
+                <tr key={row.country} className="group hover:bg-primary-50/40 dark:hover:bg-primary-900/10 transition-colors border-b border-gray-100 dark:border-gray-700/60 last:border-0">
+                  <td className="px-3 py-2.5 sticky left-0 z-10 bg-white dark:bg-gray-800 group-hover:bg-primary-50/40 dark:group-hover:bg-primary-900/10 font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap border-r border-gray-100 dark:border-gray-700 transition-colors">
+                    {row.country}
+                  </td>
                   {PROFILE_COLUMNS.map((c) => (
-                    <td key={c.key} className="px-2 py-1.5">
+                    <td key={c.key} className="px-2 py-2 text-center">
                       {cellInput(row[c.key], (v) => updateProfile(idx, c.key, v), c.type)}
                     </td>
                   ))}
@@ -176,10 +215,16 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-gray-200 dark:border-gray-700 font-semibold text-gray-700 dark:text-gray-300">
-                <td className="px-2 py-2 sticky left-0 bg-white dark:bg-gray-800">Total</td>
+              <tr className="bg-gray-50 dark:bg-gray-700/50 border-t-2 border-gray-200 dark:border-gray-600">
+                <td className="px-3 py-2.5 sticky left-0 bg-gray-50 dark:bg-gray-700/50 font-bold text-primary-600 dark:text-primary-400 border-r border-gray-200 dark:border-gray-600">
+                  Total
+                </td>
                 {PROFILE_COLUMNS.map((c) => (
-                  <td key={c.key} className="px-2 py-2">{c.type === 'number' ? totals[c.key] ?? 0 : ''}</td>
+                  <td key={c.key} className="px-2 py-2.5 text-center font-bold">
+                    {c.type === 'number'
+                      ? <span className={totals[c.key] > 0 ? 'text-gray-800 dark:text-gray-200' : 'text-gray-300 dark:text-gray-600'}>{totals[c.key] ?? 0}</span>
+                      : ''}
+                  </td>
                 ))}
               </tr>
             </tfoot>
