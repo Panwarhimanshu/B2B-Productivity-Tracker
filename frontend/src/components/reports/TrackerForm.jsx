@@ -69,42 +69,45 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
           <div className="grid grid-cols-3 gap-3">
             {/* Daily */}
             <div className="rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 p-4">
-              <p className="text-xs font-semibold text-primary-500 dark:text-primary-400 uppercase tracking-wider mb-3">Daily</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Profile</p>
+              <p className="text-xs font-semibold text-primary-500 dark:text-primary-400 uppercase tracking-wider mb-3 text-center">Daily</p>
+              <div className="flex items-stretch">
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Profile</p>
                   <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 leading-none">{targets.daily.profiles}</p>
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Wire Transfer</p>
+                <div className="w-px bg-primary-200 dark:bg-primary-700 mx-3" />
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Wire Transfer</p>
                   <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 leading-none">{targets.daily.wt}</p>
                 </div>
               </div>
             </div>
             {/* Monthly */}
             <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4">
-              <p className="text-xs font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wider mb-3">Monthly</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Profile</p>
+              <p className="text-xs font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wider mb-3 text-center">Monthly</p>
+              <div className="flex items-stretch">
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Profile</p>
                   <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 leading-none">{targets.monthly.profiles}</p>
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Wire Transfer</p>
+                <div className="w-px bg-blue-200 dark:bg-blue-700 mx-3" />
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Wire Transfer</p>
                   <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 leading-none">{targets.monthly.wt}</p>
                 </div>
               </div>
             </div>
             {/* Yearly */}
             <div className="rounded-xl bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 p-4">
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Yearly</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Profile</p>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 text-center">Yearly</p>
+              <div className="flex items-stretch">
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Profile</p>
                   <p className="text-3xl font-bold text-gray-700 dark:text-gray-200 leading-none">{targets.yearly.profiles}</p>
                 </div>
-                <div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Wire Transfer</p>
+                <div className="w-px bg-gray-300 dark:bg-gray-600 mx-3" />
+                <div className="flex-1 text-center">
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1">Wire Transfer</p>
                   <p className="text-3xl font-bold text-gray-700 dark:text-gray-200 leading-none">{targets.yearly.wt}</p>
                 </div>
               </div>
