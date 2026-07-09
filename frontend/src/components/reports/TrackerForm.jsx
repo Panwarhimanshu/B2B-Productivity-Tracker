@@ -21,8 +21,27 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
 
   const emit = (next) => onChange && onChange(next);
 
+  const autoStatus = (committed, achieved) => {
+    const c = Number(committed) || 0;
+    const a = Number(achieved) || 0;
+    if (c === 0) return '';
+    if (a >= c) return 'Achieved';
+    if (a > 0) return 'At Risk';
+    return 'Missed';
+  };
+
   const updateProfile = (idx, key, val) => {
-    const profile = data.profile.map((row, i) => (i === idx ? { ...row, [key]: val } : row));
+    const profile = data.profile.map((row, i) => {
+      if (i !== idx) return row;
+      const updated = { ...row, [key]: val };
+      if (key === 'committed' || key === 'achieved') {
+        updated.status = autoStatus(
+          key === 'committed' ? val : row.committed,
+          key === 'achieved'  ? val : row.achieved,
+        );
+      }
+      return updated;
+    });
     emit({ ...data, profile });
   };
   const updateFollowUp = (idx, key, val) => {
