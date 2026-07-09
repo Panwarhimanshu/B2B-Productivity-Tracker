@@ -62,35 +62,53 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
 
   return (
     <div className="space-y-6">
-      {/* Target Reference Table */}
-      <div className="card p-4">
-        <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3">Application Targets</p>
+      {/* Application Targets */}
+      <div className="card p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-4">Application Targets</p>
         {targets ? (
-          <div className="overflow-x-auto">
-            <table className="text-sm border-collapse">
-              <thead>
-                <tr>
-                  <th colSpan={2} className="border border-gray-300 dark:border-gray-600 px-6 py-2 text-center bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">Daily Target</th>
-                  <th colSpan={2} className="border border-gray-300 dark:border-gray-600 px-6 py-2 text-center bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">Monthly Target</th>
-                  <th colSpan={2} className="border border-gray-300 dark:border-gray-600 px-6 py-2 text-center bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">Yearly Target</th>
-                </tr>
-                <tr>
-                  {['Profile', 'Wire Transfer', 'Profile', 'Wire Transfer', 'Profile', 'Wire Transfer'].map((h, i) => (
-                    <th key={i} className="border border-gray-300 dark:border-gray-600 px-6 py-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-bold text-primary-600 dark:text-primary-400 text-base">{targets.daily.profiles}</td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-bold text-primary-600 dark:text-primary-400 text-base">{targets.daily.wt}</td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-semibold text-blue-600 dark:text-blue-400">{targets.monthly.profiles}</td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-semibold text-blue-600 dark:text-blue-400">{targets.monthly.wt}</td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-semibold text-gray-700 dark:text-gray-300">{targets.yearly.profiles}</td>
-                  <td className="border border-gray-300 dark:border-gray-600 px-6 py-2.5 text-center font-semibold text-gray-700 dark:text-gray-300">{targets.yearly.wt}</td>
-                </tr>
-              </tbody>
-            </table>
+          <div className="grid grid-cols-3 gap-3">
+            {/* Daily */}
+            <div className="rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800 p-4">
+              <p className="text-xs font-semibold text-primary-500 dark:text-primary-400 uppercase tracking-wider mb-3">Daily</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Profile</p>
+                  <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 leading-none">{targets.daily.profiles}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Wire Transfer</p>
+                  <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 leading-none">{targets.daily.wt}</p>
+                </div>
+              </div>
+            </div>
+            {/* Monthly */}
+            <div className="rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4">
+              <p className="text-xs font-semibold text-blue-500 dark:text-blue-400 uppercase tracking-wider mb-3">Monthly</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Profile</p>
+                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 leading-none">{targets.monthly.profiles}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Wire Transfer</p>
+                  <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 leading-none">{targets.monthly.wt}</p>
+                </div>
+              </div>
+            </div>
+            {/* Yearly */}
+            <div className="rounded-xl bg-gray-50 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 p-4">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Yearly</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Profile</p>
+                  <p className="text-3xl font-bold text-gray-700 dark:text-gray-200 leading-none">{targets.yearly.profiles}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-0.5">Wire Transfer</p>
+                  <p className="text-3xl font-bold text-gray-700 dark:text-gray-200 leading-none">{targets.yearly.wt}</p>
+                </div>
+              </div>
+            </div>
           </div>
         ) : (
           <div>
