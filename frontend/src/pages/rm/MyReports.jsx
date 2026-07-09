@@ -7,6 +7,9 @@ import { formatDate } from '../../utils/helpers';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EditReportModal from '../../components/reports/EditReportModal';
 
+const todayStr = () => new Date().toISOString().split('T')[0];
+const isToday = (dateStr) => new Date(dateStr).toISOString().split('T')[0] === todayStr();
+
 const MyReports = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
@@ -76,9 +79,11 @@ const MyReports = () => {
                         <button onClick={() => { setActiveReport(r); setReadOnly(true); }} className="p-1.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" title="View">
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button onClick={() => { setActiveReport(r); setReadOnly(false); }} className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20" title="Edit">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                        {isToday(r.date) && (
+                          <button onClick={() => { setActiveReport(r); setReadOnly(false); }} className="p-1.5 rounded-lg text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20" title="Edit">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

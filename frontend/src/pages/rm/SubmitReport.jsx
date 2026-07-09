@@ -104,6 +104,7 @@ const SubmitReport = () => {
                 className="border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent transition-all"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
                 max={new Date().toISOString().split('T')[0]}
                 required
               />
