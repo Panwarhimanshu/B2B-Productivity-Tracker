@@ -22,7 +22,7 @@ export const PROFILE_COLUMNS = [
 
 export const PROFILE_NUMERIC_KEYS = PROFILE_COLUMNS.filter((c) => c.type === 'number').map((c) => c.key);
 
-export const STATUS_OPTIONS = ['Achieved', 'On Track', 'At Risk', 'Missed'];
+export const STATUS_OPTIONS = ['Achieved', 'On Track', 'At Risk'];
 
 export const FOLLOW_UP_TASKS = [
   'New Applications Follow-up',

@@ -26,8 +26,7 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
     const a = Number(achieved) || 0;
     if (c === 0) return '';
     if (a >= c) return 'Achieved';
-    if (a > 0) return 'At Risk';
-    return 'Missed';
+    return 'At Risk';
   };
 
   const updateProfile = (idx, key, val) => {
