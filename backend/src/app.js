@@ -10,6 +10,7 @@ const zoneRoutes = require('./routes/zones');
 const reportRoutes = require('./routes/reports');
 const teamRoutes = require('./routes/teams');
 const targetRoutes = require('./routes/targets');
+const directoryRoutes = require('./routes/directory');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -47,6 +48,7 @@ app.use('/api/zones', zoneRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/targets', targetRoutes);
+app.use('/api/directory', directoryRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 

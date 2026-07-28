@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, BarChart3, Users, MapPin,
-  ClipboardList, TrendingUp, Building2, ChevronLeft, ChevronRight, Target, Crosshair,
+  ClipboardList, TrendingUp, Building2, ChevronLeft, ChevronRight, Target, Crosshair, BookUser,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ROLE_LABELS } from '../../utils/constants';
@@ -13,6 +13,7 @@ const navByRole = {
     { to: '/submit-report', icon: FileText, label: 'Submit Report' },
     { to: '/my-reports', icon: ClipboardList, label: 'My Reports' },
     { to: '/my-performance', icon: TrendingUp, label: 'Performance' },
+    { to: '/directory', icon: BookUser, label: 'Team Directory' },
     { to: '/profile', icon: Users, label: 'Profile' },
   ],
   TEAM_LEAD: [
@@ -20,6 +21,7 @@ const navByRole = {
     { to: '/team-dashboard',  icon: BarChart3,        label: 'Team Dashboard' },
     { to: '/team-targets',    icon: Crosshair,        label: 'Team Targets' },
     { to: '/employee-reports',icon: ClipboardList,    label: 'Employee Reports' },
+    { to: '/directory',       icon: BookUser,         label: 'Team Directory' },
     { to: '/profile',         icon: Users,            label: 'Profile' },
   ],
   HOD: [
@@ -29,6 +31,7 @@ const navByRole = {
     { to: '/user-management', icon: Users, label: 'User Management' },
     { to: '/zone-management', icon: MapPin, label: 'Zone Management' },
     { to: '/target-management', icon: Target, label: 'Monthly Targets' },
+    { to: '/directory', icon: BookUser, label: 'Team Directory' },
     { to: '/profile', icon: Users, label: 'Profile' },
   ],
 };

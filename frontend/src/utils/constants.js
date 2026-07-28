@@ -21,3 +21,17 @@ export const REPORT_STATUS_COLORS = {
   Submitted: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   Modified: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
 };
+
+export const DIRECTORY_DEPARTMENTS = [
+  'B2B Leadership',
+  'West Zone',
+  'North Zone',
+  'South Zone',
+  'Assessment Team',
+  'Application Team',
+  'Communication Team',
+  'Visa Services Team',
+  'Germany Team',
+  'UK Team',
+  'UK Communication Team',
+];

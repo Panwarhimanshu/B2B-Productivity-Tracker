@@ -1,10 +1,11 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const User = require('../src/models/User');
 const Zone = require('../src/models/Zone');
 const Team = require('../src/models/Team');
 const FormTemplate = require('../src/models/FormTemplate');
+const TeamMember = require('../src/models/TeamMember');
+const DIRECTORY_SEED_DATA = require('./directorySeedData');
 
 const seed = async () => {
   await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/b2b_task_tracker');
@@ -15,6 +16,7 @@ const seed = async () => {
     Zone.deleteMany({}),
     Team.deleteMany({}),
     FormTemplate.deleteMany({}),
+    TeamMember.deleteMany({}),
   ]);
   console.log('Cleared existing data');
 
@@ -89,6 +91,9 @@ const seed = async () => {
     ],
   });
   console.log('Form template seeded');
+
+  await TeamMember.insertMany(DIRECTORY_SEED_DATA);
+  console.log('Team directory seeded:', DIRECTORY_SEED_DATA.length, 'members');
 
   console.log('\n=== Seed Complete ===');
   console.log('Demo credentials:');

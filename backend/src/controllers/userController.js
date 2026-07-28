@@ -57,9 +57,9 @@ const getUserById = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
   try {
-    const { name, email, password, role, employeeId, zoneId, teamLeadId, joiningDate } = req.body;
+    const { name, email, password, role, designation, employeeId, zoneId, teamLeadId, joiningDate } = req.body;
 
-    const user = new User({ name, email, password, role, employeeId, zoneId, teamLeadId, joiningDate });
+    const user = new User({ name, email, password, role, designation, employeeId, zoneId, teamLeadId, joiningDate });
     await user.save();
 
     await AuditLog.create({
@@ -79,13 +79,13 @@ const createUser = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
   try {
-    const { name, email, role, employeeId, zoneId, teamLeadId, joiningDate } = req.body;
+    const { name, email, role, designation, employeeId, zoneId, teamLeadId, joiningDate } = req.body;
 
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     const before = user.toJSON();
-    Object.assign(user, { name, email, role, employeeId, zoneId, teamLeadId, joiningDate });
+    Object.assign(user, { name, email, role, designation, employeeId, zoneId, teamLeadId, joiningDate });
 
     if (req.body.password) {
       user.password = req.body.password;

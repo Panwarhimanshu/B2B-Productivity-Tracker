@@ -26,7 +26,7 @@ const round2 = (n) => Math.round(n * 100) / 100;
 
 const emptyTargetForm = () => Object.fromEntries(TARGET_FIELDS.map((f) => [f.key, '']));
 
-const emptyForm = { name: '', email: '', password: '', role: 'RM', employeeId: '', zoneId: '', teamLeadId: '', joiningDate: '' };
+const emptyForm = { name: '', email: '', password: '', role: 'RM', designation: '', employeeId: '', zoneId: '', teamLeadId: '', joiningDate: '' };
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -67,6 +67,7 @@ const UserManagement = () => {
   const openEdit = (user) => {
     setForm({
       name: user.name, email: user.email, password: '', role: user.role,
+      designation: user.designation || '',
       employeeId: user.employeeId || '', zoneId: user.zoneId?._id || '',
       teamLeadId: user.teamLeadId?._id || '',
       joiningDate: user.joiningDate ? user.joiningDate.split('T')[0] : '',
@@ -167,6 +168,7 @@ const UserManagement = () => {
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-800 dark:text-gray-200">{u.name}</p>
                       <p className="text-xs text-gray-500">{u.email}</p>
+                      {u.designation && <p className="text-xs text-gray-400">{u.designation}</p>}
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{u.employeeId || '-'}</td>
                     <td className="px-4 py-3">
@@ -239,6 +241,10 @@ const UserManagement = () => {
                 <select className="input-field" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} required>
                   {Object.entries(ROLE_LABELS).map(([val, lbl]) => <option key={val} value={val}>{lbl}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="label">Designation</label>
+                <input type="text" className="input-field" placeholder="e.g. Senior Relationship Manager" value={form.designation} onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))} />
               </div>
               <div>
                 <label className="label">Zone</label>
