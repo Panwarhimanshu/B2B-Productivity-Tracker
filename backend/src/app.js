@@ -17,7 +17,13 @@ const app = express();
 
 app.use(helmet());
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
-  .split(',').map((o) => o.trim());
+  .split(',').map((o) => o.trim()).filter(Boolean);
+
+// Vercel exposes the actual deployment host at runtime — trust it automatically so
+// preview deployments and the production alias work without manually syncing FRONTEND_URL.
+[process.env.VERCEL_URL, process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_BRANCH_URL]
+  .filter(Boolean)
+  .forEach((host) => allowedOrigins.push(`https://${host}`));
 
 const isLocalhost = (origin) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
 
