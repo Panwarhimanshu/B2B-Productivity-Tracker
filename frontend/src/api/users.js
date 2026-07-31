@@ -7,4 +7,5 @@ export const usersAPI = {
   update: (id, data) => api.put(`/users/${id}`, data),
   hide: (id) => api.patch(`/users/${id}/hide`),
   reactivate: (id) => api.patch(`/users/${id}/reactivate`),
+  importUsers: (rows) => api.post('/users/import', { rows }),
 };

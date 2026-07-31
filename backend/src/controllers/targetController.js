@@ -179,4 +179,54 @@ const getTeamTargets = async (req, res, next) => {
   }
 };
 
-module.exports = { upsertTarget, getTargetsTable, getTargetWithActuals, getTeamTargets };
+// HOD: bulk upsert yearly targets from parsed CSV rows, matched by email
+// Each row: { email, year, profiles, wt, visaServices, sop, educationLoan, gic, blockAccount, forexRemittance, insurance }
+const importTargets = async (req, res, next) => {
+  try {
+    const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+    if (!rows.length) {
+      return res.status(400).json({ success: false, message: 'No rows to import' });
+    }
+
+    let upserted = 0;
+    const errors = [];
+
+    for (let idx = 0; idx < rows.length; idx++) {
+      const rowNum = idx + 2;
+      const row = rows[idx] || {};
+      const email = (row.email || '').trim().toLowerCase();
+      const year = Number(row.year);
+
+      try {
+        if (!email || !year) {
+          errors.push({ row: rowNum, email: email || null, message: 'Email and year are required' });
+          continue;
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+          errors.push({ row: rowNum, email, message: 'No user found with this email' });
+          continue;
+        }
+
+        const update = { workingDaysPerMonth: Number(row.workingDaysPerMonth) || 25 };
+        TARGET_FIELDS.forEach((f) => { update[f] = Number(row[f]) || 0; });
+
+        await Target.findOneAndUpdate(
+          { userId: user._id, year },
+          { $set: update },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        upserted++;
+      } catch (err) {
+        errors.push({ row: rowNum, email: email || null, message: err.message });
+      }
+    }
+
+    res.json({ success: true, data: { upserted, errors } });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { upsertTarget, getTargetsTable, getTargetWithActuals, getTeamTargets, importTargets };

@@ -107,11 +107,12 @@ const getTeamReports = async (req, res, next) => {
 
 const getAllReports = async (req, res, next) => {
   try {
-    const { period = 'monthly', userId, zoneId, page = 1, limit = 20 } = req.query;
+    const { period = 'monthly', userId, zoneId, teamLeadId, page = 1, limit = 20 } = req.query;
     const { startDate, endDate } = getDateRange(period);
 
     const userFilter = { isActive: true };
     if (zoneId) userFilter.zoneId = zoneId;
+    if (teamLeadId) userFilter.teamLeadId = teamLeadId;
 
     let userIds;
     if (userId) {
@@ -318,15 +319,22 @@ const getTrackerSummary = async (req, res, next) => {
 
 const exportReports = async (req, res, next) => {
   try {
-    const { period = 'monthly', userId, format = 'xlsx' } = req.query;
+    const { period = 'monthly', userId, zoneId, teamLeadId, format = 'xlsx' } = req.query;
     const { startDate, endDate } = getDateRange(period);
 
     const filter = { date: { $gte: startDate, $lte: endDate } };
-    if (userId) filter.userId = userId;
 
     if (req.user.role === 'TEAM_LEAD') {
       const members = await User.find({ teamLeadId: req.user._id }).select('_id');
       filter.userId = { $in: members.map((m) => m._id) };
+    } else if (userId) {
+      filter.userId = userId;
+    } else if (zoneId || teamLeadId) {
+      const userFilter = {};
+      if (zoneId) userFilter.zoneId = zoneId;
+      if (teamLeadId) userFilter.teamLeadId = teamLeadId;
+      const users = await User.find(userFilter).select('_id');
+      filter.userId = { $in: users.map((u) => u._id) };
     }
 
     const reports = await DailyReport.find(filter)

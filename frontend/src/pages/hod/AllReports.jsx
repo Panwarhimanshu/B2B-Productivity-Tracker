@@ -13,17 +13,23 @@ const AllReports = () => {
   const [reports, setReports] = useState([]);
   const [users, setUsers] = useState([]);
   const [zones, setZones] = useState([]);
+  const [teamLeads, setTeamLeads] = useState([]);
   const [pagination, setPagination] = useState({});
-  const [filters, setFilters] = useState({ period: 'monthly', userId: '', zoneId: '' });
+  const [filters, setFilters] = useState({ period: 'monthly', userId: '', zoneId: '', teamLeadId: '' });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [editReport, setEditReport] = useState(null);
   const [viewOnly, setViewOnly] = useState(false);
 
   const fetchMeta = async () => {
-    const [usersRes, zonesRes] = await Promise.all([usersAPI.getAll({ role: 'RM' }), zonesAPI.getAll()]);
+    const [usersRes, zonesRes, tlRes] = await Promise.all([
+      usersAPI.getAll({ role: 'RM' }),
+      zonesAPI.getAll(),
+      usersAPI.getAll({ role: 'TEAM_LEAD' }),
+    ]);
     setUsers(usersRes.data.data);
     setZones(zonesRes.data.data);
+    setTeamLeads(tlRes.data.data);
   };
 
   const fetchReports = async () => {
@@ -63,6 +69,10 @@ const AllReports = () => {
           <select className="input-field w-auto text-sm" value={filters.zoneId} onChange={(e) => setFilter('zoneId', e.target.value)}>
             <option value="">All Zones</option>
             {zones.map((z) => <option key={z._id} value={z._id}>{z.name}</option>)}
+          </select>
+          <select className="input-field w-auto text-sm" value={filters.teamLeadId} onChange={(e) => setFilter('teamLeadId', e.target.value)}>
+            <option value="">All Teams</option>
+            {teamLeads.map((tl) => <option key={tl._id} value={tl._id}>{tl.name}'s Team</option>)}
           </select>
           <select className="input-field w-auto text-sm" value={filters.userId} onChange={(e) => setFilter('userId', e.target.value)}>
             <option value="">All Employees</option>

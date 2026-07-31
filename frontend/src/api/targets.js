@@ -6,4 +6,5 @@ export const targetsAPI = {
   getMyWithActuals:(month, year)       => api.get('/targets/user/me',      { params: { month, year } }),
   getForUser:      (userId, month, year) => api.get(`/targets/user/${userId}`, { params: { month, year } }),
   getTeamTargets:  (month, year)         => api.get('/targets/team',           { params: { month, year } }),
+  importTargets:   (rows)                => api.post('/targets/import', { rows }),
 };

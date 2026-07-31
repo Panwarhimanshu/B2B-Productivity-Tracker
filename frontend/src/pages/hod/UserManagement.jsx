@@ -1,12 +1,41 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, UserX, UserCheck, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Edit2, UserX, UserCheck, Search, ChevronDown, ChevronUp, Upload, Download, X } from 'lucide-react';
 import { usersAPI } from '../../api/users';
 import { zonesAPI } from '../../api/zones';
+import { teamsAPI } from '../../api/teams';
 import { targetsAPI } from '../../api/targets';
 import { ROLE_LABELS, ROLES } from '../../utils/constants';
 import { formatDate, getErrorMessage } from '../../utils/helpers';
+import { parseCSV, downloadCSV } from '../../utils/csv';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+
+const USER_IMPORT_HEADERS = ['name', 'email', 'password', 'role', 'designation', 'employeeId', 'zone', 'team', 'joiningDate'];
+const TARGET_IMPORT_HEADERS = ['email', 'year', 'profiles', 'wt', 'visaServices', 'sop', 'educationLoan', 'gic', 'blockAccount', 'forexRemittance', 'insurance'];
+
+const ImportResultSummary = ({ result, counts }) => (
+  <div className="mt-2 text-xs space-y-1">
+    <p className="text-gray-600 dark:text-gray-300">
+      {counts.map(({ label, key }) => `${label}: ${result[key] ?? 0}`).join(' · ')}
+      {result.warnings?.length > 0 && ` · Warnings: ${result.warnings.length}`}
+      {result.errors?.length > 0 && ` · Errors: ${result.errors.length}`}
+    </p>
+    {result.errors?.length > 0 && (
+      <ul className="text-red-600 dark:text-red-400 space-y-0.5 max-h-24 overflow-y-auto">
+        {result.errors.map((e, i) => (
+          <li key={i}>Row {e.row}{e.email ? ` (${e.email})` : ''}: {e.message}</li>
+        ))}
+      </ul>
+    )}
+    {result.warnings?.length > 0 && (
+      <ul className="text-amber-600 dark:text-amber-400 space-y-0.5 max-h-24 overflow-y-auto">
+        {result.warnings.map((w, i) => (
+          <li key={i}>Row {w.row}{w.email ? ` (${w.email})` : ''}: {w.message}</li>
+        ))}
+      </ul>
+    )}
+  </div>
+);
 
 const TARGET_FIELDS = [
   { key: 'profiles',        label: 'Profiles' },
@@ -26,12 +55,12 @@ const round2 = (n) => Math.round(n * 100) / 100;
 
 const emptyTargetForm = () => Object.fromEntries(TARGET_FIELDS.map((f) => [f.key, '']));
 
-const emptyForm = { name: '', email: '', password: '', role: 'RM', designation: '', employeeId: '', zoneId: '', teamLeadId: '', joiningDate: '' };
+const emptyForm = { name: '', email: '', password: '', role: 'RM', designation: '', employeeId: '', zoneId: '', teamId: '', joiningDate: '' };
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [zones, setZones] = useState([]);
-  const [teamLeads, setTeamLeads] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [pagination, setPagination] = useState({});
   const [showInactive, setShowInactive] = useState(false);
   const [search, setSearch] = useState('');
@@ -43,19 +72,24 @@ const UserManagement = () => {
   const [saving, setSaving] = useState(false);
   const [targetForm, setTargetForm] = useState(emptyTargetForm());
   const [showTargets, setShowTargets] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importingUsers, setImportingUsers] = useState(false);
+  const [importingTargets, setImportingTargets] = useState(false);
+  const [userImportResult, setUserImportResult] = useState(null);
+  const [targetImportResult, setTargetImportResult] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [usersRes, zonesRes, tlRes] = await Promise.all([
+      const [usersRes, zonesRes, teamsRes] = await Promise.all([
         usersAPI.getAll({ isActive: !showInactive, search: search || undefined, page, limit: 15 }),
         zonesAPI.getAll(),
-        usersAPI.getAll({ role: 'TEAM_LEAD' }),
+        teamsAPI.getAll(),
       ]);
       setUsers(usersRes.data.data);
       setPagination(usersRes.data.pagination);
       setZones(zonesRes.data.data);
-      setTeamLeads(tlRes.data.data);
+      setTeams(teamsRes.data.data);
     } finally {
       setLoading(false);
     }
@@ -65,11 +99,13 @@ const UserManagement = () => {
 
   const openCreate = () => { setForm(emptyForm); setTargetForm(emptyTargetForm()); setShowTargets(false); setEditingUser(null); setShowForm(true); };
   const openEdit = (user) => {
+    const memberTeam = teams.find((t) => t.members?.some((m) => m._id === user._id));
+    const fallbackTeam = teams.find((t) => t.zoneId?._id === user.zoneId?._id && t.teamLeadId?._id === user.teamLeadId?._id);
     setForm({
       name: user.name, email: user.email, password: '', role: user.role,
       designation: user.designation || '',
       employeeId: user.employeeId || '', zoneId: user.zoneId?._id || '',
-      teamLeadId: user.teamLeadId?._id || '',
+      teamId: (memberTeam || fallbackTeam)?._id || '',
       joiningDate: user.joiningDate ? user.joiningDate.split('T')[0] : '',
     });
     setEditingUser(user);
@@ -83,7 +119,7 @@ const UserManagement = () => {
       const payload = { ...form };
       if (!payload.password) delete payload.password;
       if (!payload.zoneId || payload.zoneId === 'all') delete payload.zoneId;
-      if (!payload.teamLeadId) delete payload.teamLeadId;
+      if (!payload.teamId) delete payload.teamId;
 
       if (editingUser) {
         await usersAPI.update(editingUser._id, payload);
@@ -126,6 +162,64 @@ const UserManagement = () => {
     }
   };
 
+  const closeImport = () => {
+    setShowImport(false);
+    setUserImportResult(null);
+    setTargetImportResult(null);
+  };
+
+  const downloadUserSample = () => {
+    downloadCSV('users-import-sample.csv', USER_IMPORT_HEADERS, [
+      { name: 'Anita Verma', email: 'anita.verma@company.com', password: 'User@123', role: 'RM', designation: 'Relationship Manager', employeeId: 'RM101', zone: 'North', team: 'North Team Alpha', joiningDate: '2024-01-15' },
+      { name: 'Priya Sharma', email: 'priya.sharma@company.com', password: 'Admin@123', role: 'TEAM_LEAD', designation: 'Team Lead', employeeId: 'TL101', zone: 'North', team: '', joiningDate: '2023-06-01' },
+    ]);
+  };
+
+  const downloadTargetSample = () => {
+    downloadCSV('targets-import-sample.csv', TARGET_IMPORT_HEADERS, [
+      { email: 'anita.verma@company.com', year: new Date().getFullYear(), profiles: 120, wt: 300, visaServices: 75, sop: 18, educationLoan: 75, gic: 150, blockAccount: 50, forexRemittance: 60, insurance: 24 },
+    ]);
+  };
+
+  const handleUserImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImportingUsers(true);
+    setUserImportResult(null);
+    try {
+      const rows = parseCSV(await file.text());
+      if (!rows.length) { toast.error('CSV is empty'); return; }
+      const res = await usersAPI.importUsers(rows);
+      setUserImportResult(res.data.data);
+      toast.success(`Import done: ${res.data.data.created} created, ${res.data.data.updated} updated`);
+      fetchData();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setImportingUsers(false);
+    }
+  };
+
+  const handleTargetImportFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImportingTargets(true);
+    setTargetImportResult(null);
+    try {
+      const rows = parseCSV(await file.text());
+      if (!rows.length) { toast.error('CSV is empty'); return; }
+      const res = await targetsAPI.importTargets(rows);
+      setTargetImportResult(res.data.data);
+      toast.success(`Import done: ${res.data.data.upserted} targets saved`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setImportingTargets(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
@@ -145,6 +239,7 @@ const UserManagement = () => {
             <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="rounded" />
             Inactive
           </label>
+          <button onClick={() => setShowImport(true)} className="btn-secondary"><Upload className="w-4 h-4" />Import</button>
           <button onClick={openCreate} className="btn-primary"><Plus className="w-4 h-4" />Add User</button>
         </div>
       </div>
@@ -248,19 +343,32 @@ const UserManagement = () => {
               </div>
               <div>
                 <label className="label">Zone</label>
-                <select className="input-field" value={form.zoneId} onChange={(e) => setForm((f) => ({ ...f, zoneId: e.target.value }))}>
+                <select
+                  className="input-field"
+                  value={form.zoneId}
+                  onChange={(e) => setForm((f) => ({ ...f, zoneId: e.target.value, teamId: '' }))}
+                >
                   <option value="">Select zone...</option>
                   <option value="all">All Zone</option>
                   {zones.map((z) => <option key={z._id} value={z._id}>{z.name}</option>)}
                 </select>
               </div>
-              {form.role === 'RM' && (
+              {form.zoneId && form.zoneId !== 'all' && (
                 <div>
-                  <label className="label">Team Lead</label>
-                  <select className="input-field" value={form.teamLeadId} onChange={(e) => setForm((f) => ({ ...f, teamLeadId: e.target.value }))}>
-                    <option value="">Select team lead...</option>
-                    {teamLeads.map((tl) => <option key={tl._id} value={tl._id}>{tl.name}</option>)}
-                  </select>
+                  <label className="label">Team</label>
+                  {(() => {
+                    const zoneTeams = teams.filter((t) => t.zoneId?._id === form.zoneId);
+                    return zoneTeams.length === 0 ? (
+                      <p className="text-xs text-gray-400">No teams in this zone yet — add one from Zone Management.</p>
+                    ) : (
+                      <select className="input-field" value={form.teamId} onChange={(e) => setForm((f) => ({ ...f, teamId: e.target.value }))}>
+                        <option value="">No team</option>
+                        {zoneTeams.map((t) => (
+                          <option key={t._id} value={t._id}>{t.name}{t.teamLeadId?.name ? ` — ${t.teamLeadId.name}` : ''}</option>
+                        ))}
+                      </select>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -314,6 +422,64 @@ const UserManagement = () => {
                 {saving ? 'Saving...' : editingUser ? 'Update User' : 'Create User'}
               </button>
               <button onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Import Modal */}
+      {showImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Bulk Import</h2>
+              <button onClick={closeImport} className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-6">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Import Users (Login)</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Columns: {USER_IMPORT_HEADERS.join(', ')}. The team column must match an existing team's name within that row's zone (see Zone Management). Existing emails are updated (password kept unless a new one is given); new emails are created (password required, min 6 characters).
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <button type="button" onClick={downloadUserSample} className="btn-secondary text-xs py-1.5 px-3">
+                    <Download className="w-3.5 h-3.5" />Sample CSV
+                  </button>
+                  <label className="btn-primary text-xs py-1.5 px-3 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" />{importingUsers ? 'Importing...' : 'Upload CSV'}
+                    <input type="file" accept=".csv" className="hidden" onChange={handleUserImportFile} disabled={importingUsers} />
+                  </label>
+                </div>
+                {userImportResult && (
+                  <ImportResultSummary result={userImportResult} counts={[{ label: 'Created', key: 'created' }, { label: 'Updated', key: 'updated' }]} />
+                )}
+              </div>
+
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-5">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Import Targets</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Columns: {TARGET_IMPORT_HEADERS.join(', ')}. Matches existing users by email; the user must already exist.
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <button type="button" onClick={downloadTargetSample} className="btn-secondary text-xs py-1.5 px-3">
+                    <Download className="w-3.5 h-3.5" />Sample CSV
+                  </button>
+                  <label className="btn-primary text-xs py-1.5 px-3 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" />{importingTargets ? 'Importing...' : 'Upload CSV'}
+                    <input type="file" accept=".csv" className="hidden" onChange={handleTargetImportFile} disabled={importingTargets} />
+                  </label>
+                </div>
+                {targetImportResult && (
+                  <ImportResultSummary result={targetImportResult} counts={[{ label: 'Saved', key: 'upserted' }]} />
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end p-5 border-t border-gray-200 dark:border-gray-700">
+              <button onClick={closeImport} className="btn-secondary">Close</button>
             </div>
           </div>
         </div>

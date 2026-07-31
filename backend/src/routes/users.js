@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const { body } = require('express-validator');
 const {
-  getUsers, getUserById, createUser, updateUser, hideUser, reactivateUser,
+  getUsers, getUserById, createUser, updateUser, hideUser, reactivateUser, importUsers,
 } = require('../controllers/userController');
 const { authenticate } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorize');
@@ -25,6 +25,7 @@ router.post(
   createUser
 );
 
+router.post('/import', authorize('HOD'), importUsers);
 router.put('/:id', authorize('HOD'), updateUser);
 router.patch('/:id/hide', authorize('HOD'), hideUser);
 router.patch('/:id/reactivate', authorize('HOD'), reactivateUser);
