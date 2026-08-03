@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, formatDistanceToNow } from 'date-fns';
 
 export const formatDate = (date, fmt = 'dd MMM yyyy') => {
   if (!date) return '-';
@@ -6,6 +6,15 @@ export const formatDate = (date, fmt = 'dd MMM yyyy') => {
     return format(typeof date === 'string' ? parseISO(date) : date, fmt);
   } catch {
     return '-';
+  }
+};
+
+export const timeAgo = (date) => {
+  if (!date) return '';
+  try {
+    return formatDistanceToNow(typeof date === 'string' ? parseISO(date) : date, { addSuffix: true });
+  } catch {
+    return '';
   }
 };
 

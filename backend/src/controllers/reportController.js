@@ -1,7 +1,9 @@
 const DailyReport = require('../models/DailyReport');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
+const Notification = require('../models/Notification');
 const { exportToExcel } = require('../services/exportService');
+const { sendReportSubmittedEmail } = require('../services/emailService');
 const { getDateRange } = require('../utils/helpers');
 const {
   COUNTRIES,
@@ -12,6 +14,52 @@ const {
 
 // Headline count shown in lists/cards: total applications across countries.
 const applicationsCount = (tasks) => computeReportTotals(tasks).profile.applications || 0;
+
+// Notify the RM's Team Lead + all active HODs (in-app + email) when a report is submitted.
+// Best-effort: failures here must never fail the report submission itself.
+const notifyReportSubmitted = async (report, rm) => {
+  try {
+    const recipients = [];
+    if (rm.teamLeadId) {
+      const tl = await User.findById(rm.teamLeadId).select('name email isActive');
+      if (tl?.isActive) recipients.push(tl);
+    }
+    const hods = await User.find({ role: 'HOD', isActive: true }).select('name email');
+    recipients.push(...hods);
+
+    const seen = new Set();
+    const uniqueRecipients = recipients.filter((r) => {
+      const id = r._id.toString();
+      if (seen.has(id) || id === rm._id.toString()) return false;
+      seen.add(id);
+      return true;
+    });
+
+    const dateStr = new Date(report.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const title = 'Daily Report Submitted';
+    const message = `${rm.name} submitted their daily report for ${dateStr}`;
+
+    await Promise.all(uniqueRecipients.map(async (recipient) => {
+      await Notification.create({
+        recipientId: recipient._id,
+        type: 'REPORT_SUBMITTED',
+        title,
+        message,
+        entity: 'DailyReport',
+        entityId: report._id,
+      });
+      await sendReportSubmittedEmail({
+        to: recipient.email,
+        recipientName: recipient.name,
+        rmName: rm.name,
+        reportDate: report.date,
+        totalTasksCount: report.totalTasksCount,
+      });
+    }));
+  } catch (error) {
+    console.error('[notifyReportSubmitted] failed:', error.message);
+  }
+};
 
 const submitReport = async (req, res, next) => {
   try {
@@ -44,6 +92,8 @@ const submitReport = async (req, res, next) => {
       after: report.toObject(),
       ipAddress: req.ip,
     });
+
+    await notifyReportSubmitted(report, req.user);
 
     res.status(201).json({ success: true, message: 'Report submitted successfully', data: report });
   } catch (error) {
