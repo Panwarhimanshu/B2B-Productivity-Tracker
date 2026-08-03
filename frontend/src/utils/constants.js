@@ -22,6 +22,16 @@ export const REPORT_STATUS_COLORS = {
   Modified: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
 };
 
+export const LOG_ACTION_LABELS = {
+  SUBMIT_REPORT: 'Submitted',
+  MODIFY_REPORT: 'Modified',
+};
+
+export const LOG_ACTION_COLORS = {
+  SUBMIT_REPORT: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  MODIFY_REPORT: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+};
+
 export const DIRECTORY_DEPARTMENTS = [
   'B2B Leadership',
   'West Zone',

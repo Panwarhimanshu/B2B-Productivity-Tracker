@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { body } = require('express-validator');
 const {
   submitReport, getMyReports, getTeamReports, getAllReports,
-  updateReport, getAnalytics, getTrackerSummary, exportReports, getFormTemplate,
+  updateReport, getAnalytics, getTrackerSummary, exportReports, getFormTemplate, getReportLogs,
 } = require('../controllers/reportController');
 const { authenticate } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorize');
@@ -16,6 +16,7 @@ router.get('/summary', getTrackerSummary);
 router.get('/my', getMyReports);
 router.get('/team', authorize('TEAM_LEAD', 'HOD'), getTeamReports);
 router.get('/all', authorize('HOD'), getAllReports);
+router.get('/logs', authorize('HOD'), getReportLogs);
 router.get('/export', authorize('TEAM_LEAD', 'HOD'), exportReports);
 
 router.post(

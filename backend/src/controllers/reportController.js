@@ -36,6 +36,15 @@ const submitReport = async (req, res, next) => {
       status: 'Submitted',
     });
 
+    await AuditLog.create({
+      action: 'SUBMIT_REPORT',
+      entity: 'DailyReport',
+      entityId: report._id,
+      performedBy: req.user._id,
+      after: report.toObject(),
+      ipAddress: req.ip,
+    });
+
     res.status(201).json({ success: true, message: 'Report submitted successfully', data: report });
   } catch (error) {
     next(error);
@@ -150,8 +159,17 @@ const updateReport = async (req, res, next) => {
     const report = await DailyReport.findById(req.params.id);
     if (!report) return res.status(404).json({ success: false, message: 'Report not found' });
 
-    if (req.user.role === 'RM' && report.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Access denied' });
+    if (req.user.role === 'RM') {
+      if (report.userId.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ success: false, message: 'Access denied' });
+      }
+      const reportDay = new Date(report.date);
+      reportDay.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (reportDay.getTime() !== today.getTime()) {
+        return res.status(403).json({ success: false, message: 'You can only edit today\'s report' });
+      }
     }
 
     if (req.user.role === 'TEAM_LEAD') {
@@ -362,4 +380,57 @@ const getFormTemplate = async (req, res, next) => {
   }
 };
 
-module.exports = { submitReport, getMyReports, getTeamReports, getAllReports, updateReport, getAnalytics, getTrackerSummary, exportReports, getFormTemplate };
+// HOD only: audit trail of report submissions/edits by RMs and Team Leads
+const getReportLogs = async (req, res, next) => {
+  try {
+    const { period, role, performedBy, action, page = 1, limit = 25 } = req.query;
+
+    const filter = { entity: 'DailyReport' };
+    if (action) filter.action = action;
+    if (period) {
+      const { startDate, endDate } = getDateRange(period);
+      filter.createdAt = { $gte: startDate, $lte: endDate };
+    }
+    if (performedBy) {
+      filter.performedBy = performedBy;
+    } else if (role) {
+      const matchedUsers = await User.find({ role }).select('_id');
+      filter.performedBy = { $in: matchedUsers.map((u) => u._id) };
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const [logs, total] = await Promise.all([
+      AuditLog.find(filter)
+        .populate('performedBy', 'name email role')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      AuditLog.countDocuments(filter),
+    ]);
+
+    const ownerIds = [...new Set(
+      logs.map((l) => (l.after?.userId || l.before?.userId)).filter(Boolean).map(String)
+    )];
+    const owners = await User.find({ _id: { $in: ownerIds } }).select('name email');
+    const ownerMap = Object.fromEntries(owners.map((o) => [o._id.toString(), o]));
+
+    const data = logs.map((l) => {
+      const ownerId = (l.after?.userId || l.before?.userId)?.toString();
+      return {
+        ...l.toObject(),
+        reportOwner: ownerId ? ownerMap[ownerId] || null : null,
+        reportDate: l.after?.date || l.before?.date || null,
+      };
+    });
+
+    res.json({
+      success: true,
+      data,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { submitReport, getMyReports, getTeamReports, getAllReports, updateReport, getAnalytics, getTrackerSummary, exportReports, getFormTemplate, getReportLogs };

@@ -16,6 +16,7 @@ import OrgDashboard from './pages/hod/OrgDashboard';
 import UserManagement from './pages/hod/UserManagement';
 import ZoneManagement from './pages/hod/ZoneManagement';
 import AllReports from './pages/hod/AllReports';
+import ReportLogs from './pages/hod/ReportLogs';
 import TargetManagement from './pages/hod/TargetManagement';
 import LoadingSpinner from './components/common/LoadingSpinner';
 
@@ -87,6 +88,10 @@ const App = () => {
           <Route
             path="/all-reports"
             element={<ProtectedRoute allowedRoles={['HOD']}><AllReports /></ProtectedRoute>}
+          />
+          <Route
+            path="/report-logs"
+            element={<ProtectedRoute allowedRoles={['HOD']}><ReportLogs /></ProtectedRoute>}
           />
           <Route
             path="/target-management"

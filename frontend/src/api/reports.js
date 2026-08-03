@@ -10,4 +10,5 @@ export const reportsAPI = {
   getSummary: (params) => api.get('/reports/summary', { params }),
   export: (params) => api.get('/reports/export', { params, responseType: 'blob' }),
   getTemplate: () => api.get('/reports/template'),
+  getLogs: (params) => api.get('/reports/logs', { params }),
 };
