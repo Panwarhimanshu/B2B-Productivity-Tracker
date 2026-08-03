@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { X, Save } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Save, Printer } from 'lucide-react';
 import { reportsAPI } from '../../api/reports';
 import { targetsAPI } from '../../api/targets';
 import { formatDate, getErrorMessage } from '../../utils/helpers';
 import { normalizeTracker } from '../../constants/tracker';
 import TrackerForm from './TrackerForm';
 import toast from 'react-hot-toast';
+
+const printRoot = typeof document !== 'undefined' ? document.getElementById('print-root') : null;
 
 const EditReportModal = ({ report, onClose, onSaved, readOnly = false }) => {
   const [tracker, setTracker] = useState(normalizeTracker(null));
@@ -47,6 +50,7 @@ const EditReportModal = ({ report, onClose, onSaved, readOnly = false }) => {
   if (!report) return null;
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col">
         {/* Header */}
@@ -106,10 +110,32 @@ const EditReportModal = ({ report, onClose, onSaved, readOnly = false }) => {
               )}
             </button>
           )}
+          <button onClick={() => window.print()} className="btn-secondary">
+            <Printer className="w-4 h-4" />Print
+          </button>
           <button onClick={onClose} className={`btn-secondary ${readOnly ? 'flex-1' : ''}`}>Close</button>
         </div>
       </div>
     </div>
+
+    {printRoot && createPortal(
+      <div className="p-6">
+        <div className="flex items-baseline justify-between border-b-2 border-gray-800 pb-3 mb-5">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">{report.userId?.name || 'Daily Report'}</h1>
+            <p className="text-sm text-gray-600">{report.userId?.employeeId ? `${report.userId.employeeId} · ` : ''}{formatDate(report.date)}</p>
+          </div>
+          <p className="text-xs text-gray-400">Generated {formatDate(new Date(), 'dd MMM yyyy, hh:mm a')}</p>
+        </div>
+        <TrackerForm value={tracker} onChange={() => {}} readOnly yearlyTarget={yearlyTarget} />
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">Modifier Remarks</p>
+          <p className="text-sm text-gray-800">{remarks || '-'}</p>
+        </div>
+      </div>,
+      printRoot
+    )}
+    </>
   );
 };
 

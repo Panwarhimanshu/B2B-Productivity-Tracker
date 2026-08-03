@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -22,6 +23,31 @@ import LoadingSpinner from './components/common/LoadingSpinner';
 
 const App = () => {
   const { isLoading, isAuthenticated } = useAuth();
+
+  // Printed output (e.g. the report Print button) should always render in light mode,
+  // regardless of the app's current theme — dark Tailwind classes would otherwise
+  // still apply since #print-root lives under the same <html> element.
+  useEffect(() => {
+    const root = document.documentElement;
+    const forceLight = () => {
+      if (root.classList.contains('dark')) {
+        root.dataset.wasDark = 'true';
+        root.classList.remove('dark');
+      }
+    };
+    const restoreTheme = () => {
+      if (root.dataset.wasDark === 'true') {
+        root.classList.add('dark');
+        delete root.dataset.wasDark;
+      }
+    };
+    window.addEventListener('beforeprint', forceLight);
+    window.addEventListener('afterprint', restoreTheme);
+    return () => {
+      window.removeEventListener('beforeprint', forceLight);
+      window.removeEventListener('afterprint', restoreTheme);
+    };
+  }, []);
 
   if (isLoading) {
     return (

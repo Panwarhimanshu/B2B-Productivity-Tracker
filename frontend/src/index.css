@@ -47,3 +47,24 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-gray-300 dark:bg-gray-600 rounded-full;
 }
+
+/* Report print output: rendered via portal into #print-root, kept out of
+   normal layout/screen view and only shown when printing. */
+#print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  body > #root {
+    display: none !important;
+  }
+  #print-root {
+    display: block !important;
+    background: #fff;
+    color: #111;
+  }
+}
