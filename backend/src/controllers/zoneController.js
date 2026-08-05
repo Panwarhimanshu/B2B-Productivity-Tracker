@@ -1,4 +1,6 @@
 const Zone = require('../models/Zone');
+const Team = require('../models/Team');
+const User = require('../models/User');
 
 const getZones = async (req, res, next) => {
   try {
@@ -31,9 +33,15 @@ const updateZone = async (req, res, next) => {
 
 const deleteZone = async (req, res, next) => {
   try {
-    const zone = await Zone.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+    // Permanently remove the zone from the database
+    const zone = await Zone.findByIdAndDelete(req.params.id);
     if (!zone) return res.status(404).json({ success: false, message: 'Zone not found' });
-    res.json({ success: true, message: 'Zone deactivated successfully' });
+
+    // Clean up referencing records: detach related teams and users from this zone
+    await Team.updateMany({ zoneId: zone._id }, { $set: { zoneId: null } });
+    await User.updateMany({ zoneId: zone._id }, { $set: { zoneId: null } });
+
+    res.json({ success: true, message: 'Zone deleted successfully' });
   } catch (error) {
     next(error);
   }

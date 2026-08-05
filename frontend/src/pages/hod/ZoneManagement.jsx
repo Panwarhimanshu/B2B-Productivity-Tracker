@@ -98,10 +98,10 @@ const ZoneManagement = () => {
   };
 
   const handleDelete = async (zone) => {
-    if (!window.confirm(`Deactivate zone "${zone.name}"?`)) return;
+    if (!window.confirm(`Delete zone "${zone.name}"? This will permanently remove it and detach its teams & users.`)) return;
     try {
       await zonesAPI.delete(zone._id);
-      toast.success('Zone deactivated');
+      toast.success('Zone deleted');
       fetchZones();
     } catch (err) {
       toast.error(getErrorMessage(err));
