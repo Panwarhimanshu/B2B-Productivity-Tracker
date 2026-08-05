@@ -1,10 +1,12 @@
 const DailyReport = require('../models/DailyReport');
 const User = require('../models/User');
+const Zone = require('../models/Zone');
 const AuditLog = require('../models/AuditLog');
 const Notification = require('../models/Notification');
 const { exportToExcel } = require('../services/exportService');
 const { sendReportSubmittedEmail } = require('../services/emailService');
 const { getDateRange } = require('../utils/helpers');
+const { ZONE_NOTIFY_RECIPIENTS } = require('../config/zoneNotifyRecipients');
 const {
   COUNTRIES,
   PROFILE_NUMERIC_KEYS,
@@ -15,15 +17,24 @@ const {
 // Headline count shown in lists/cards: total applications across countries.
 const applicationsCount = (tasks) => computeReportTotals(tasks).profile.applications || 0;
 
-// Notify the RM's Team Lead + all active HODs (in-app + email) when a report is submitted.
+// Notify the RM's zone Team Leads + all active HODs (in-app + email) when a report is submitted.
 // Best-effort: failures here must never fail the report submission itself.
 const notifyReportSubmitted = async (report, rm) => {
   try {
     const recipients = [];
-    if (rm.teamLeadId) {
+
+    const zone = rm.zoneId ? await Zone.findById(rm.zoneId).select('name') : null;
+    const zoneTLEmails = zone ? ZONE_NOTIFY_RECIPIENTS[zone.name] : null;
+
+    if (zoneTLEmails?.length) {
+      const zoneTLs = await User.find({ email: { $in: zoneTLEmails }, isActive: true }).select('name email');
+      recipients.push(...zoneTLs);
+    } else if (rm.teamLeadId) {
+      // No zone-level mapping configured — fall back to the RM's own assigned Team Lead.
       const tl = await User.findById(rm.teamLeadId).select('name email isActive');
       if (tl?.isActive) recipients.push(tl);
     }
+
     const hods = await User.find({ role: 'HOD', isActive: true }).select('name email');
     recipients.push(...hods);
 
@@ -36,8 +47,11 @@ const notifyReportSubmitted = async (report, rm) => {
     });
 
     const dateStr = new Date(report.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeStr = new Date(report.createdAt).toLocaleTimeString('en-IN', {
+      hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata',
+    });
     const title = 'Daily Report Submitted';
-    const message = `${rm.name} submitted their daily report for ${dateStr}`;
+    const message = `${rm.name} submitted their daily report for ${dateStr} at ${timeStr} IST`;
 
     await Promise.all(uniqueRecipients.map(async (recipient) => {
       await Notification.create({
@@ -54,6 +68,7 @@ const notifyReportSubmitted = async (report, rm) => {
         rmName: rm.name,
         reportDate: report.date,
         totalTasksCount: report.totalTasksCount,
+        submittedAt: report.createdAt,
       });
     }));
   } catch (error) {
