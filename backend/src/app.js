@@ -16,6 +16,10 @@ const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
+// Vercel sits in front as a single reverse proxy hop — trust its X-Forwarded-For
+// so express-rate-limit can identify clients instead of throwing on every request.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',').map((o) => o.trim()).filter(Boolean);
@@ -32,8 +36,8 @@ app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
     if (process.env.NODE_ENV !== 'production' && isLocalhost(origin)) return cb(null, true);
-    if (allowedOrigins.some((o) => origin.startsWith(o))) return cb(null, true);
-    cb(new Error('CORS: origin not allowed'));
+    if (allowedOrigins.some((o) => origin === o || origin.startsWith(o))) return cb(null, true);
+    cb(new Error(`CORS: origin not allowed (${origin})`));
   },
   credentials: true,
 }));

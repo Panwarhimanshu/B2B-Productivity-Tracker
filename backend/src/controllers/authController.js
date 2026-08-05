@@ -6,7 +6,8 @@ const cloudinary = require('../config/cloudinary');
 
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = req.body.password;
 
     const user = await User.findOne({ email, isActive: true }).select('+password +refreshToken');
     if (!user) {

@@ -12,7 +12,7 @@ const connectDB = async () => {
   } catch (error) {
     console.error('MongoDB connection error:', error.message);
     console.error('MongoDB URI:', process.env.MONGODB_URI ? 'Using environment variable' : 'Using default localhost');
-    process.exit(1);
+    throw error;
   }
 };
 
