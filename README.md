@@ -71,16 +71,6 @@ npm run dev             # Starts on :5173
 ### 2. Open in browser
 Visit `http://localhost:5173`
 
-## Demo Credentials
-
-| Role      | Email                | Password   |
-|-----------|----------------------|------------|
-| HOD       | hod@company.com      | Admin@123  |
-| Team Lead | tl1@company.com      | Admin@123  |
-| Team Lead | tl2@company.com      | Admin@123  |
-| RM        | rm1@company.com      | User@123   |
-| RM        | rm2@company.com      | User@123   |
-
 ## Docker Deployment
 
 ```bash
