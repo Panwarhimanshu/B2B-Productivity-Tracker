@@ -53,6 +53,16 @@ const notifyReportSubmitted = async (report, rm) => {
     const title = 'Daily Report Submitted';
     const message = `${rm.name} submitted their daily report for ${dateStr} at ${timeStr} IST`;
 
+    const totals = computeReportTotals(report.tasks);
+    const communicationTotal = Object.values(totals.communication).reduce((s, v) => s + v, 0);
+    const reportTotals = {
+      committed: totals.profile.committed,
+      achieved: totals.profile.achieved,
+      applications: totals.profile.applications,
+      followUpCompleted: totals.followUp.completed,
+      communicationTotal,
+    };
+
     await Promise.all(uniqueRecipients.map(async (recipient) => {
       await Notification.create({
         recipientId: recipient._id,
@@ -67,8 +77,8 @@ const notifyReportSubmitted = async (report, rm) => {
         recipientName: recipient.name,
         rmName: rm.name,
         reportDate: report.date,
-        totalTasksCount: report.totalTasksCount,
         submittedAt: report.createdAt,
+        totals: reportTotals,
       });
     }));
   } catch (error) {
