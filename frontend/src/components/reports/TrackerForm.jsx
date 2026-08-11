@@ -255,8 +255,9 @@ const TrackerForm = ({ value, onChange, readOnly = false, yearlyTarget = null })
             </div>
           ))}
         </div>
-        {/* Link inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+        {/* Link inputs — omitted from print output: URLs aren't actionable on paper and the extra
+            height is what was pushing the printed report onto a second page. */}
+        <div className="print:hidden grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
           {COMMUNICATION_ITEMS.filter((c) => c.linkKey).map((c) => (
             <div key={c.linkKey} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-3">
               <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{c.label}</p>
