@@ -20,7 +20,7 @@ const sendMail = async ({ to, subject, html }) => {
   }
 };
 
-const sendReportSubmittedEmail = async ({ to, recipientName, rmName, reportDate, totalTasksCount, submittedAt }) => {
+const sendReportSubmittedEmail = async ({ to, recipientName, rmName, reportDate, totals, submittedAt }) => {
   const dateStr = new Date(reportDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const submittedAtStr = new Date(submittedAt || Date.now()).toLocaleString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -29,6 +29,26 @@ const sendReportSubmittedEmail = async ({ to, recipientName, rmName, reportDate,
   });
   const frontendUrl = (process.env.FRONTEND_URL || '').split(',')[0].trim();
   const initial = (rmName || '?').trim().charAt(0).toUpperCase();
+
+  const t = totals || {};
+  const stats = [
+    ['Committed', t.committed ?? 0],
+    ['Achieved', t.achieved ?? 0],
+    ['Applications', t.applications ?? 0],
+    ['Follow-ups Completed', t.followUpCompleted ?? 0],
+    ['Communication Activity', t.communicationTotal ?? 0],
+  ];
+  const statRows = [];
+  for (let i = 0; i < stats.length; i += 2) statRows.push(stats.slice(i, i + 2));
+  const statsHtml = statRows.map((pair, rowIdx) => `
+    <tr>
+      ${pair.map(([label, value]) => `
+      <td style="width: 50%; padding: 16px 20px; ${rowIdx < statRows.length - 1 ? 'border-bottom: 1px solid #e5e7eb;' : ''}">
+        <p style="margin: 0 0 2px; color: #6b7280; font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;">${label}</p>
+        <p style="margin: 0; color: #111827; font-size: 20px; font-weight: 700;">${value}</p>
+      </td>`).join('')}
+      ${pair.length === 1 ? '<td style="width: 50%;"></td>' : ''}
+    </tr>`).join('');
 
   await sendMail({
     to,
@@ -58,14 +78,9 @@ const sendReportSubmittedEmail = async ({ to, recipientName, rmName, reportDate,
           <tr>
             <td style="padding: 0 32px 24px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px;">
+                ${statsHtml}
                 <tr>
-                  <td style="padding: 16px 20px; border-bottom: 1px solid #e5e7eb;">
-                    <p style="margin: 0 0 2px; color: #6b7280; font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;">Total Applications</p>
-                    <p style="margin: 0; color: #111827; font-size: 22px; font-weight: 700;">${totalTasksCount ?? 0}</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding: 16px 20px;">
+                  <td colspan="2" style="padding: 16px 20px; border-top: 1px solid #e5e7eb;">
                     <p style="margin: 0 0 2px; color: #6b7280; font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;">Submitted At</p>
                     <p style="margin: 0; color: #111827; font-size: 15px; font-weight: 600;">${submittedAtStr} IST</p>
                   </td>
