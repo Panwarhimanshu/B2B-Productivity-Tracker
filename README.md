@@ -21,30 +21,6 @@ A production-ready, login-based task tracking web application for B2B teams.
 | TEAM_LEAD | Admin        | View & edit team reports, team analytics         |
 | HOD       | Super Admin  | Full access, user/zone management, all reports   |
 
-## Project Structure
-
-```
-Productivity/
-├── backend/
-│   ├── src/
-│   │   ├── config/         # DB & JWT config
-│   │   ├── controllers/    # Route handlers
-│   │   ├── middleware/     # Auth, authorize, validate, error
-│   │   ├── models/         # Mongoose schemas
-│   │   ├── routes/         # Express routers
-│   │   ├── services/       # Export service
-│   │   └── utils/          # Helpers
-│   ├── scripts/seed.js     # Demo data seeder
-│   └── server.js
-├── frontend/
-│   └── src/
-│       ├── api/            # Axios API layer
-│       ├── components/     # Reusable UI components
-│       ├── context/        # Auth & Theme context
-│       ├── pages/          # All page components
-│       └── utils/          # Constants & helpers
-└── docker-compose.yml
-```
 
 ## Quick Start (Local Development)
 
@@ -52,7 +28,7 @@ Productivity/
 - Node.js 18+
 - MongoDB (local or Atlas)
 
-### 1. Clone & Setup
+### Clone & Setup
 
 ```bash
 # Backend
@@ -60,16 +36,13 @@ cd backend
 cp .env.example .env    # Edit your MONGODB_URI and JWT secrets
 npm install
 npm run seed            # Seed demo data
-npm run dev             # Starts on :5000
+npm run dev
 
 # Frontend (new terminal)
 cd frontend
 npm install
-npm run dev             # Starts on :5173
+npm run dev
 ```
-
-### 2. Open in browser
-Visit `http://localhost:5173`
 
 ## Docker Deployment
 
@@ -119,19 +92,7 @@ docker-compose up --build -d
 | PUT    | /api/zones/:id | Update zone    |
 | DELETE | /api/zones/:id | Deactivate zone|
 
-## Environment Variables
 
-```env
-# Backend .env
-NODE_ENV=development
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/b2b_task_tracker
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-ACCESS_TOKEN_EXPIRY=15m
-REFRESH_TOKEN_EXPIRY=7d
-FRONTEND_URL=http://localhost:5173
-```
 
 ## Key Features
 
