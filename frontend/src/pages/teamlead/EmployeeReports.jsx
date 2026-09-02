@@ -104,7 +104,9 @@ const EmployeeReports = () => {
 
       {pagination.pages > 1 && (
         <div className="flex items-center justify-between text-sm">
-          <p className="text-gray-500">{reports.length} of {pagination.total} records</p>
+          <p className="text-gray-500">
+            Showing {(page - 1) * pagination.limit + 1}–{(page - 1) * pagination.limit + reports.length} of {pagination.total} records
+          </p>
           <div className="flex gap-2">
             <button className="btn-secondary py-1 px-3" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</button>
             <span className="px-3 py-1 text-gray-700 dark:text-gray-300">{page}/{pagination.pages}</span>
