@@ -22,12 +22,10 @@ const AllReports = () => {
   const [viewOnly, setViewOnly] = useState(false);
 
   const fetchMeta = async () => {
-    const [usersRes, zonesRes, tlRes] = await Promise.all([
-      usersAPI.getAll({ role: 'RM' }),
+    const [zonesRes, tlRes] = await Promise.all([
       zonesAPI.getAll(),
       usersAPI.getAll({ role: 'TEAM_LEAD' }),
     ]);
-    setUsers(usersRes.data.data);
     setZones(zonesRes.data.data);
     setTeamLeads(tlRes.data.data);
   };
@@ -45,6 +43,20 @@ const AllReports = () => {
 
   useEffect(() => { fetchMeta(); }, []);
   useEffect(() => { fetchReports(); }, [filters, page]);
+
+  // Scope the Employee dropdown to the currently selected Zone/Team — an employee picked
+  // before switching zones would otherwise stay selected and silently zero out the results.
+  useEffect(() => {
+    let active = true;
+    usersAPI.getAll({ role: 'RM', zoneId: filters.zoneId, teamLeadId: filters.teamLeadId, limit: 200 })
+      .then((res) => {
+        if (!active) return;
+        const list = res.data.data;
+        setUsers(list);
+        setFilters((f) => (f.userId && !list.some((u) => u._id === f.userId) ? { ...f, userId: '' } : f));
+      });
+    return () => { active = false; };
+  }, [filters.zoneId, filters.teamLeadId]);
 
   const setFilter = (key, value) => { setFilters((f) => ({ ...f, [key]: value })); setPage(1); };
 
