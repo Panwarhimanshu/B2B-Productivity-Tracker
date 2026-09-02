@@ -102,3 +102,28 @@ export const computeTotals = (tasks) => {
   });
   return profileTotals;
 };
+
+// Reshape a GET /reports/summary aggregate (totals across a date range) into a tracker payload
+// so it can be rendered read-only through the same TrackerForm as a single day's report.
+// Fields with no single value over a range (Status, Reason, per-task follow-up breakdown, link
+// URLs, the free-text summary) are collapsed to a blank / combined placeholder.
+export const buildConsolidatedTracker = (summary) => {
+  const base = emptyTracker();
+  base.profile = base.profile.map((row) => {
+    const agg = summary.perCountry?.find((r) => r.country === row.country);
+    return agg ? { ...row, ...agg } : row;
+  });
+  base.communication = { ...base.communication, ...summary.communication };
+  base.extraInitiatives = {
+    leadsCommitted: summary.leads?.committed ?? 0,
+    leadsGenerated: summary.leads?.generated ?? 0,
+  };
+  base.followUpTasks = [{
+    task: 'All Follow-up Tasks (combined)',
+    committed: summary.followUp?.committed ?? 0,
+    completed: summary.followUp?.completed ?? 0,
+    remarks: '',
+  }];
+  base.summary = `Consolidated from ${summary.reportsCount ?? 0} submitted report(s).`;
+  return base;
+};
