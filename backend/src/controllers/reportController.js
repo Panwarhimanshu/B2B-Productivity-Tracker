@@ -337,19 +337,33 @@ const getAnalytics = async (req, res, next) => {
 // Aggregated KPI rollup over a date range, scoped by role (mirrors the TL Dashboard tab).
 const getTrackerSummary = async (req, res, next) => {
   try {
-    const { period = 'monthly', userId, zoneId } = req.query;
-    const { startDate, endDate } = getDateRange(period);
+    const { period = 'monthly', userId, zoneId, startDate: startParam, endDate: endParam } = req.query;
 
-    // Resolve which users are in scope.
+    let startDate, endDate;
+    if (startParam && endParam) {
+      // Explicit range (e.g. a consolidated report over a custom month) takes priority over `period`.
+      startDate = new Date(startParam);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(endParam);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      ({ startDate, endDate } = getDateRange(period));
+    }
+
+    // Resolve which users are in scope. `userId`/`zoneId` only narrow further within a role's
+    // own scope — an RM can never see another user's data, and a Team Lead can't reach outside
+    // their own team, regardless of what's passed in the query string.
     const userFilter = { isActive: true };
     if (req.user.role === 'RM') {
       userFilter._id = req.user._id;
     } else if (req.user.role === 'TEAM_LEAD') {
       const members = await User.find({ teamLeadId: req.user._id, isActive: true }).select('_id');
-      userFilter._id = { $in: members.map((m) => m._id) };
+      const memberIds = members.map((m) => m._id.toString());
+      userFilter._id = userId && memberIds.includes(userId) ? userId : { $in: memberIds };
+    } else {
+      if (zoneId) userFilter.zoneId = zoneId;
+      if (userId) userFilter._id = userId;
     }
-    if (zoneId) userFilter.zoneId = zoneId;
-    if (userId) userFilter._id = userId;
 
     const scopedUsers = await User.find(userFilter).select('_id');
     const userIds = scopedUsers.map((u) => u._id);
