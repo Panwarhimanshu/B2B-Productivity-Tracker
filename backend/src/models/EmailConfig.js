@@ -18,6 +18,14 @@ const zoneRecipientSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const teamRecipientSchema = new mongoose.Schema(
+  {
+    teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true },
+    emails: { type: [String], default: [] },
+  },
+  { _id: false }
+);
+
 const emailConfigSchema = new mongoose.Schema(
   {
     _id: { type: String, default: SINGLETON_ID },
@@ -29,6 +37,9 @@ const emailConfigSchema = new mongoose.Schema(
     // so the page can show/curate exactly who's in and who's out (not an all-or-nothing switch).
     hodRecipientIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], default: [] },
     zoneRecipients: { type: [zoneRecipientSchema], default: [] },
+    // More granular than zoneRecipients — lets a HOD notify different people for different
+    // teams within the same zone. Additive with zoneRecipients, not a replacement for it.
+    teamRecipients: { type: [teamRecipientSchema], default: [] },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true }

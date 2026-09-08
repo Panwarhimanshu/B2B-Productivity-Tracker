@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Mail, Send, Plus, X, Save, RefreshCw } from 'lucide-react';
 import { emailConfigAPI } from '../../api/emailConfig';
 import { zonesAPI } from '../../api/zones';
+import { teamsAPI } from '../../api/teams';
 import { EMAIL_LOG_STATUS_COLORS } from '../../utils/constants';
 import { formatDate, getErrorMessage } from '../../utils/helpers';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -72,7 +73,7 @@ const EmailConfiguration = () => {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [zones, setZones] = useState([]);
-  const [form, setForm] = useState(null); // { fromName, fromEmail, appPassword, hasAppPassword, enabled, hods: [{_id,name,email,notified}], zoneRecipients: [{zoneId, emails}] }
+  const [form, setForm] = useState(null); // { fromName, fromEmail, appPassword, hasAppPassword, enabled, hods: [{_id,name,email,notified}], zoneRecipients: [{zoneId, emails}], teamRecipients: [{teamId, emails}] }
 
   const [logs, setLogs] = useState([]);
   const [logPagination, setLogPagination] = useState({});
@@ -83,9 +84,10 @@ const EmailConfiguration = () => {
   const fetchConfig = async () => {
     setLoading(true);
     try {
-      const [configRes, zonesRes] = await Promise.all([emailConfigAPI.get(), zonesAPI.getAll()]);
+      const [configRes, zonesRes, teamsRes] = await Promise.all([emailConfigAPI.get(), zonesAPI.getAll(), teamsAPI.getAll()]);
       const config = configRes.data.data;
       const zoneList = zonesRes.data.data;
+      const teamList = teamsRes.data.data;
       setZones(zoneList);
       setForm({
         fromName: config.fromName || '',
@@ -97,6 +99,10 @@ const EmailConfiguration = () => {
         zoneRecipients: zoneList.map((z) => {
           const existing = config.zoneRecipients.find((zr) => zr.zoneId === z._id);
           return { zoneId: z._id, zoneName: z.name, emails: existing?.emails || [] };
+        }),
+        teamRecipients: teamList.map((t) => {
+          const existing = config.teamRecipients.find((tr) => tr.teamId === t._id);
+          return { teamId: t._id, teamName: t.name, zoneName: t.zoneId?.name || '', emails: existing?.emails || [] };
         }),
       });
     } catch (err) {
@@ -127,6 +133,10 @@ const EmailConfiguration = () => {
     ...f,
     zoneRecipients: f.zoneRecipients.map((zr) => (zr.zoneId === zoneId ? { ...zr, emails } : zr)),
   }));
+  const updateTeamEmails = (teamId, emails) => setForm((f) => ({
+    ...f,
+    teamRecipients: f.teamRecipients.map((tr) => (tr.teamId === teamId ? { ...tr, emails } : tr)),
+  }));
   const toggleHod = (hodId) => setForm((f) => ({
     ...f,
     hods: f.hods.map((h) => (h._id === hodId ? { ...h, notified: !h.notified } : h)),
@@ -143,6 +153,7 @@ const EmailConfiguration = () => {
         enabled: form.enabled,
         hodRecipientIds: form.hods.filter((h) => h.notified).map((h) => h._id),
         zoneRecipients: form.zoneRecipients.map(({ zoneId, emails }) => ({ zoneId, emails })),
+        teamRecipients: form.teamRecipients.map(({ teamId, emails }) => ({ teamId, emails })),
       });
       toast.success('Email configuration saved');
       const config = res.data.data;
@@ -267,6 +278,20 @@ const EmailConfiguration = () => {
           ))}
           {form.zoneRecipients.length === 0 && <p className="text-sm text-gray-400">No zones configured yet — add one in Zone Management first.</p>}
         </div>
+
+        <div className="pt-3 border-t border-gray-100 dark:border-gray-700 space-y-4">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Per team: extra recipients for a specific team, in addition to its zone's recipients above — use this when different teams in the same zone need different people notified.
+          </p>
+          {form.teamRecipients.map((tr) => (
+            <div key={tr.teamId}>
+              <label className="label">{tr.teamName}{tr.zoneName && <span className="text-gray-400 font-normal"> — {tr.zoneName}</span>}</label>
+              <EmailChips emails={tr.emails} onChange={(emails) => updateTeamEmails(tr.teamId, emails)} />
+            </div>
+          ))}
+          {form.teamRecipients.length === 0 && <p className="text-sm text-gray-400">No teams configured yet — add one in Zone Management first.</p>}
+        </div>
+
         <div className="pt-2">
           <button onClick={handleSave} disabled={saving} className="btn-primary">
             {saving ? 'Saving...' : <><Save className="w-4 h-4" />Save Changes</>}
