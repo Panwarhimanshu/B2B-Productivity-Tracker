@@ -3,6 +3,7 @@ const EmailConfig = require('../models/EmailConfig');
 const EmailLog = require('../models/EmailLog');
 const AuditLog = require('../models/AuditLog');
 const User = require('../models/User');
+const Team = require('../models/Team');
 const { sendTestEmail } = require('../services/emailService');
 
 const shapeConfig = (config, hods) => {
@@ -18,18 +19,27 @@ const shapeConfig = (config, hods) => {
       zoneName: zr.zoneId?.name || '',
       emails: zr.emails,
     })),
+    teamRecipients: config.teamRecipients.map((tr) => ({
+      teamId: tr.teamId?._id || tr.teamId,
+      teamName: tr.teamId?.name || '',
+      zoneName: tr.teamId?.zoneId?.name || '',
+      emails: tr.emails,
+    })),
     updatedAt: config.updatedAt,
   };
 };
+
+const populateConfig = (config) => config
+  .populate('zoneRecipients.zoneId', 'name')
+  .then(() => config.populate({ path: 'teamRecipients.teamId', select: 'name zoneId', populate: { path: 'zoneId', select: 'name' } }));
 
 // Returns the config with the app password reduced to a boolean — it's write-only from the API's
 // perspective, so the UI can show "already set" without ever receiving the actual secret back.
 const getConfig = async (req, res, next) => {
   try {
-    const [config, hods] = await Promise.all([
-      EmailConfig.getSingleton(true).then((c) => c.populate('zoneRecipients.zoneId', 'name')),
-      User.find({ role: 'HOD', isActive: true }).select('name email').sort({ name: 1 }),
-    ]);
+    const config = await EmailConfig.getSingleton(true);
+    await populateConfig(config);
+    const hods = await User.find({ role: 'HOD', isActive: true }).select('name email').sort({ name: 1 });
 
     res.json({ success: true, data: shapeConfig(config, hods) });
   } catch (error) {
@@ -39,7 +49,7 @@ const getConfig = async (req, res, next) => {
 
 const updateConfig = async (req, res, next) => {
   try {
-    const { fromName, fromEmail, appPassword, enabled, hodRecipientIds, zoneRecipients } = req.body;
+    const { fromName, fromEmail, appPassword, enabled, hodRecipientIds, zoneRecipients, teamRecipients } = req.body;
     const config = await EmailConfig.getSingleton(true);
     const before = { ...config.toObject(), appPassword: config.appPassword ? '(hidden)' : '' };
 
@@ -61,6 +71,17 @@ const updateConfig = async (req, res, next) => {
           emails: Array.isArray(zr.emails) ? zr.emails.map((e) => String(e).trim().toLowerCase()).filter(Boolean) : [],
         }));
     }
+    if (Array.isArray(teamRecipients)) {
+      // Same "only store real ids" guard as zones/HODs above.
+      const validTeams = await Team.find({ _id: { $in: teamRecipients.map((tr) => tr.teamId) }, isActive: true }).select('_id');
+      const validTeamIds = new Set(validTeams.map((t) => t._id.toString()));
+      config.teamRecipients = teamRecipients
+        .filter((tr) => tr.teamId && validTeamIds.has(String(tr.teamId)))
+        .map((tr) => ({
+          teamId: tr.teamId,
+          emails: Array.isArray(tr.emails) ? tr.emails.map((e) => String(e).trim().toLowerCase()).filter(Boolean) : [],
+        }));
+    }
     config.updatedBy = req.user._id;
     await config.save();
 
@@ -77,10 +98,8 @@ const updateConfig = async (req, res, next) => {
       ipAddress: req.ip,
     });
 
-    const [, hods] = await Promise.all([
-      config.populate('zoneRecipients.zoneId', 'name'),
-      User.find({ role: 'HOD', isActive: true }).select('name email').sort({ name: 1 }),
-    ]);
+    await populateConfig(config);
+    const hods = await User.find({ role: 'HOD', isActive: true }).select('name email').sort({ name: 1 });
     res.json({ success: true, message: 'Email configuration updated', data: shapeConfig(config, hods) });
   } catch (error) {
     next(error);

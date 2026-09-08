@@ -1,5 +1,6 @@
 const DailyReport = require('../models/DailyReport');
 const User = require('../models/User');
+const Team = require('../models/Team');
 const AuditLog = require('../models/AuditLog');
 const Notification = require('../models/Notification');
 const EmailConfig = require('../models/EmailConfig');
@@ -30,17 +31,28 @@ const notifyReportSubmitted = async (report, rm) => {
       : null;
     const zoneEmails = zoneEntry?.emails || [];
 
-    if (zoneEmails.length) {
-      // A zone recipient may or may not be a real user account (e.g. an external address) —
-      // match against Users to get an in-app Notification + display name where possible.
-      const matched = await User.find({ email: { $in: zoneEmails }, isActive: true }).select('name email');
+    // Team recipients are additive with zone recipients — a HOD can watch a whole zone AND
+    // give a specific team its own extra recipients.
+    const team = await Team.findOne({ members: rm._id, isActive: true }).select('_id');
+    const teamEntry = team
+      ? emailConfig.teamRecipients.find((tr) => tr.teamId.toString() === team._id.toString())
+      : null;
+    const teamEmails = teamEntry?.emails || [];
+
+    const configuredEmails = [...new Set([...zoneEmails, ...teamEmails])];
+
+    if (configuredEmails.length) {
+      // A configured recipient may or may not be a real user account (e.g. an external address)
+      // — match against Users to get an in-app Notification + display name where possible.
+      const matched = await User.find({ email: { $in: configuredEmails }, isActive: true }).select('name email');
       const byEmail = new Map(matched.map((u) => [u.email.toLowerCase(), u]));
-      zoneEmails.forEach((email) => {
+      configuredEmails.forEach((email) => {
         const u = byEmail.get(email.toLowerCase());
         recipients.push({ email, name: u?.name || '', _id: u?._id });
       });
     } else if (rm.teamLeadId) {
-      // No zone-level recipients configured — fall back to the RM's own assigned Team Lead.
+      // Neither the RM's zone nor their team has explicit recipients configured yet — fall back
+      // to their own assigned Team Lead so nothing silently goes unnotified.
       const tl = await User.findById(rm.teamLeadId).select('name email isActive');
       if (tl?.isActive) recipients.push({ name: tl.name, email: tl.email, _id: tl._id });
     }
