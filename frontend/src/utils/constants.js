@@ -32,6 +32,12 @@ export const LOG_ACTION_COLORS = {
   MODIFY_REPORT: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
 };
 
+export const EMAIL_LOG_STATUS_COLORS = {
+  sent: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+  failed: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  skipped: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+};
+
 export const DIRECTORY_DEPARTMENTS = [
   'B2B Leadership',
   'West Zone',

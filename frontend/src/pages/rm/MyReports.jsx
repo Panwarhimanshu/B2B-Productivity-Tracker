@@ -98,7 +98,7 @@ const MyReports = () => {
       {pagination.pages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <p className="text-gray-500 dark:text-gray-400">
-            Showing {reports.length} of {pagination.total} reports
+            Showing {(page - 1) * pagination.limit + 1}–{(page - 1) * pagination.limit + reports.length} of {pagination.total} reports
           </p>
           <div className="flex gap-2">
             <button className="btn-secondary py-1 px-3" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</button>
