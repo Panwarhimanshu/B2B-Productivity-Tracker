@@ -19,6 +19,7 @@ import ZoneManagement from './pages/hod/ZoneManagement';
 import AllReports from './pages/hod/AllReports';
 import ReportLogs from './pages/hod/ReportLogs';
 import TargetManagement from './pages/hod/TargetManagement';
+import EmailConfiguration from './pages/hod/EmailConfiguration';
 import LoadingSpinner from './components/common/LoadingSpinner';
 
 const App = () => {
@@ -122,6 +123,10 @@ const App = () => {
           <Route
             path="/target-management"
             element={<ProtectedRoute allowedRoles={['HOD']}><TargetManagement /></ProtectedRoute>}
+          />
+          <Route
+            path="/email-configuration"
+            element={<ProtectedRoute allowedRoles={['HOD']}><EmailConfiguration /></ProtectedRoute>}
           />
         </Route>
       </Route>

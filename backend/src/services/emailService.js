@@ -1,26 +1,33 @@
 const { getTransporter } = require('../config/email');
+const EmailConfig = require('../models/EmailConfig');
+const EmailLog = require('../models/EmailLog');
 
-const FROM_NAME = process.env.EMAIL_FROM_NAME || 'B2B Task Tracker';
+const sendMail = async ({ to, subject, html, type, relatedEntity = null, relatedEntityId = null }) => {
+  const logResult = (status, error = '') =>
+    EmailLog.create({ to, subject, type, status, error: error ? String(error).slice(0, 500) : '', relatedEntity, relatedEntityId })
+      .catch((e) => console.error('[email] Failed to write EmailLog:', e.message));
 
-const sendMail = async ({ to, subject, html }) => {
-  const transporter = getTransporter();
+  const transporter = await getTransporter();
   if (!transporter) {
-    console.warn('[email] Skipped — EMAIL_USER / EMAIL_APP_PASSWORD not configured');
+    console.warn('[email] Skipped — sending disabled or sender account not configured');
+    await logResult('skipped');
     return;
   }
+
   try {
-    await transporter.sendMail({
-      from: `"${FROM_NAME}" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
-    });
+    const config = await EmailConfig.getSingleton(true).catch(() => null);
+    const fromName = config?.fromName || process.env.EMAIL_FROM_NAME || 'B2B Task Tracker';
+    const fromEmail = config?.fromEmail || process.env.EMAIL_USER;
+
+    await transporter.sendMail({ from: `"${fromName}" <${fromEmail}>`, to, subject, html });
+    await logResult('sent');
   } catch (error) {
     console.error('[email] Send failed:', error.message);
+    await logResult('failed', error.message);
   }
 };
 
-const sendReportSubmittedEmail = async ({ to, recipientName, rmName, reportDate, totals, submittedAt }) => {
+const sendReportSubmittedEmail = async ({ to, recipientName, rmName, reportDate, totals, submittedAt, relatedEntityId }) => {
   const dateStr = new Date(reportDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   const submittedAtStr = new Date(submittedAt || Date.now()).toLocaleString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
@@ -53,6 +60,9 @@ const sendReportSubmittedEmail = async ({ to, recipientName, rmName, reportDate,
   await sendMail({
     to,
     subject: `Daily Report Submitted — ${rmName} (${dateStr})`,
+    type: 'REPORT_SUBMITTED',
+    relatedEntity: 'DailyReport',
+    relatedEntityId,
     html: `
       <div style="background-color: #f3f4f6; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
@@ -105,4 +115,27 @@ const sendReportSubmittedEmail = async ({ to, recipientName, rmName, reportDate,
   });
 };
 
-module.exports = { sendMail, sendReportSubmittedEmail };
+// Lets a HOD verify the configured sender account actually works, straight from the settings page.
+const sendTestEmail = async (to) => {
+  await sendMail({
+    to,
+    subject: 'B2B Task Tracker — Test Email',
+    type: 'TEST',
+    html: `
+      <div style="background-color: #f3f4f6; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="padding: 32px;">
+              <h1 style="margin: 0 0 8px; color: #111827; font-size: 18px; font-weight: 700;">Test email</h1>
+              <p style="margin: 0; color: #374151; font-size: 14px; line-height: 1.5;">
+                If you're reading this, the B2B Task Tracker's email configuration is working correctly.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `,
+  });
+};
+
+module.exports = { sendMail, sendReportSubmittedEmail, sendTestEmail };

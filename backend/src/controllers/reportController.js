@@ -1,12 +1,11 @@
 const DailyReport = require('../models/DailyReport');
 const User = require('../models/User');
-const Zone = require('../models/Zone');
 const AuditLog = require('../models/AuditLog');
 const Notification = require('../models/Notification');
+const EmailConfig = require('../models/EmailConfig');
 const { exportToExcel } = require('../services/exportService');
 const { sendReportSubmittedEmail } = require('../services/emailService');
 const { getDateRange } = require('../utils/helpers');
-const { ZONE_NOTIFY_RECIPIENTS } = require('../config/zoneNotifyRecipients');
 const {
   COUNTRIES,
   PROFILE_NUMERIC_KEYS,
@@ -17,32 +16,46 @@ const {
 // Headline count shown in lists/cards: total applications across countries.
 const applicationsCount = (tasks) => computeReportTotals(tasks).profile.applications || 0;
 
-// Notify the RM's zone Team Leads + all active HODs (in-app + email) when a report is submitted.
-// Best-effort: failures here must never fail the report submission itself.
+// Notify the RM's zone recipients + (optionally) all active HODs (in-app + email) when a report
+// is submitted. Recipients and the email on/off switch are managed from the HOD's Email
+// Configuration page (EmailConfig) rather than hardcoded. Best-effort: failures here must never
+// fail the report submission itself.
 const notifyReportSubmitted = async (report, rm) => {
   try {
-    const recipients = [];
+    const emailConfig = await EmailConfig.getSingleton();
+    const recipients = []; // { name, email }
 
-    const zone = rm.zoneId ? await Zone.findById(rm.zoneId).select('name') : null;
-    const zoneTLEmails = zone ? ZONE_NOTIFY_RECIPIENTS[zone.name] : null;
+    const zoneEntry = rm.zoneId
+      ? emailConfig.zoneRecipients.find((zr) => zr.zoneId.toString() === rm.zoneId.toString())
+      : null;
+    const zoneEmails = zoneEntry?.emails || [];
 
-    if (zoneTLEmails?.length) {
-      const zoneTLs = await User.find({ email: { $in: zoneTLEmails }, isActive: true }).select('name email');
-      recipients.push(...zoneTLs);
+    if (zoneEmails.length) {
+      // A zone recipient may or may not be a real user account (e.g. an external address) —
+      // match against Users to get an in-app Notification + display name where possible.
+      const matched = await User.find({ email: { $in: zoneEmails }, isActive: true }).select('name email');
+      const byEmail = new Map(matched.map((u) => [u.email.toLowerCase(), u]));
+      zoneEmails.forEach((email) => {
+        const u = byEmail.get(email.toLowerCase());
+        recipients.push({ email, name: u?.name || '', _id: u?._id });
+      });
     } else if (rm.teamLeadId) {
-      // No zone-level mapping configured — fall back to the RM's own assigned Team Lead.
+      // No zone-level recipients configured — fall back to the RM's own assigned Team Lead.
       const tl = await User.findById(rm.teamLeadId).select('name email isActive');
-      if (tl?.isActive) recipients.push(tl);
+      if (tl?.isActive) recipients.push({ name: tl.name, email: tl.email, _id: tl._id });
     }
 
-    const hods = await User.find({ role: 'HOD', isActive: true }).select('name email');
-    recipients.push(...hods);
+    if (emailConfig.notifyAllHods) {
+      const hods = await User.find({ role: 'HOD', isActive: true }).select('name email');
+      hods.forEach((h) => recipients.push({ name: h.name, email: h.email, _id: h._id }));
+    }
 
+    const rmEmail = (rm.email || '').toLowerCase();
     const seen = new Set();
     const uniqueRecipients = recipients.filter((r) => {
-      const id = r._id.toString();
-      if (seen.has(id) || id === rm._id.toString()) return false;
-      seen.add(id);
+      const key = r.email.toLowerCase();
+      if (seen.has(key) || key === rmEmail) return false;
+      seen.add(key);
       return true;
     });
 
@@ -64,14 +77,18 @@ const notifyReportSubmitted = async (report, rm) => {
     };
 
     await Promise.all(uniqueRecipients.map(async (recipient) => {
-      await Notification.create({
-        recipientId: recipient._id,
-        type: 'REPORT_SUBMITTED',
-        title,
-        message,
-        entity: 'DailyReport',
-        entityId: report._id,
-      });
+      // Only recipients backed by a real account get an in-app notification; email still goes
+      // out to everyone in the list (e.g. an external zone address with no account here).
+      if (recipient._id) {
+        await Notification.create({
+          recipientId: recipient._id,
+          type: 'REPORT_SUBMITTED',
+          title,
+          message,
+          entity: 'DailyReport',
+          entityId: report._id,
+        });
+      }
       await sendReportSubmittedEmail({
         to: recipient.email,
         recipientName: recipient.name,
@@ -79,6 +96,7 @@ const notifyReportSubmitted = async (report, rm) => {
         reportDate: report.date,
         submittedAt: report.createdAt,
         totals: reportTotals,
+        relatedEntityId: report._id,
       });
     }));
   } catch (error) {

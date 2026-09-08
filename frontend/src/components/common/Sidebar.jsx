@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, BarChart3, Users, MapPin,
-  ClipboardList, TrendingUp, Building2, ChevronLeft, ChevronRight, Target, Crosshair, BookUser, History,
+  ClipboardList, TrendingUp, Building2, ChevronLeft, ChevronRight, Target, Crosshair, BookUser, History, Mail,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ROLE_LABELS } from '../../utils/constants';
@@ -32,6 +32,7 @@ const navByRole = {
     { to: '/user-management', icon: Users, label: 'User Management' },
     { to: '/zone-management', icon: MapPin, label: 'Zone Management' },
     { to: '/target-management', icon: Target, label: 'Monthly Targets' },
+    { to: '/email-configuration', icon: Mail, label: 'Email Configuration' },
     { to: '/directory', icon: BookUser, label: 'Team Directory' },
     { to: '/profile', icon: Users, label: 'Profile' },
   ],

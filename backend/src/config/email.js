@@ -1,21 +1,23 @@
 const nodemailer = require('nodemailer');
+const EmailConfig = require('../models/EmailConfig');
 
-// Lazily created so a missing config doesn't crash the server at boot —
-// email sending is best-effort and failures must never block a report submission.
-let transporter = null;
+// Builds a fresh transporter from whatever's currently configured (DB first, env var fallback
+// for a zero-config first deploy). Not cached at module scope — credentials can change from the
+// HOD's Email Configuration page, so every send must pick up the latest values. Creating a
+// nodemailer transport is cheap (no network call happens until sendMail is actually called).
+const getTransporter = async () => {
+  const config = await EmailConfig.getSingleton(true).catch(() => null);
 
-const getTransporter = () => {
-  if (transporter) return transporter;
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD) return null;
+  const user = config?.fromEmail || process.env.EMAIL_USER;
+  const pass = config?.appPassword || process.env.EMAIL_APP_PASSWORD;
+  const enabled = config?.enabled ?? true;
 
-  transporter = nodemailer.createTransport({
+  if (!enabled || !user || !pass) return null;
+
+  return nodemailer.createTransport({
     service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD,
-    },
+    auth: { user, pass },
   });
-  return transporter;
 };
 
 module.exports = { getTransporter };

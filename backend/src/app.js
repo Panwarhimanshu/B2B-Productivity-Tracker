@@ -12,6 +12,7 @@ const teamRoutes = require('./routes/teams');
 const targetRoutes = require('./routes/targets');
 const directoryRoutes = require('./routes/directory');
 const notificationRoutes = require('./routes/notifications');
+const emailConfigRoutes = require('./routes/emailConfig');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -61,6 +62,7 @@ app.use('/api/teams', teamRoutes);
 app.use('/api/targets', targetRoutes);
 app.use('/api/directory', directoryRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/email-config', emailConfigRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
