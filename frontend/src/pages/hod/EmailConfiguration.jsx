@@ -72,7 +72,7 @@ const EmailConfiguration = () => {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [zones, setZones] = useState([]);
-  const [form, setForm] = useState(null); // { fromName, fromEmail, appPassword, hasAppPassword, enabled, notifyAllHods, zoneRecipients: [{zoneId, emails}] }
+  const [form, setForm] = useState(null); // { fromName, fromEmail, appPassword, hasAppPassword, enabled, hods: [{_id,name,email,notified}], zoneRecipients: [{zoneId, emails}] }
 
   const [logs, setLogs] = useState([]);
   const [logPagination, setLogPagination] = useState({});
@@ -93,7 +93,7 @@ const EmailConfiguration = () => {
         appPassword: '',
         hasAppPassword: config.hasAppPassword,
         enabled: config.enabled,
-        notifyAllHods: config.notifyAllHods,
+        hods: config.hods,
         zoneRecipients: zoneList.map((z) => {
           const existing = config.zoneRecipients.find((zr) => zr.zoneId === z._id);
           return { zoneId: z._id, zoneName: z.name, emails: existing?.emails || [] };
@@ -127,6 +127,11 @@ const EmailConfiguration = () => {
     ...f,
     zoneRecipients: f.zoneRecipients.map((zr) => (zr.zoneId === zoneId ? { ...zr, emails } : zr)),
   }));
+  const toggleHod = (hodId) => setForm((f) => ({
+    ...f,
+    hods: f.hods.map((h) => (h._id === hodId ? { ...h, notified: !h.notified } : h)),
+  }));
+  const setAllHods = (notified) => setForm((f) => ({ ...f, hods: f.hods.map((h) => ({ ...h, notified })) }));
 
   const handleSave = async () => {
     setSaving(true);
@@ -136,12 +141,12 @@ const EmailConfiguration = () => {
         fromEmail: form.fromEmail,
         ...(form.appPassword ? { appPassword: form.appPassword } : {}),
         enabled: form.enabled,
-        notifyAllHods: form.notifyAllHods,
+        hodRecipientIds: form.hods.filter((h) => h.notified).map((h) => h._id),
         zoneRecipients: form.zoneRecipients.map(({ zoneId, emails }) => ({ zoneId, emails })),
       });
       toast.success('Email configuration saved');
       const config = res.data.data;
-      updateForm({ appPassword: '', hasAppPassword: config.hasAppPassword });
+      updateForm({ appPassword: '', hasAppPassword: config.hasAppPassword, hods: config.hods });
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -226,12 +231,30 @@ const EmailConfiguration = () => {
       {/* Recipients */}
       <div className="card p-5 space-y-4">
         <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Recipients</h2>
-        <Toggle
-          checked={form.notifyAllHods}
-          onChange={(v) => updateForm({ notifyAllHods: v })}
-          label="Notify all Heads of Department"
-          hint="Every active HOD gets a copy of every report-submitted email, in addition to the zone recipients below."
-        />
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="label !mb-0">Heads of Department</label>
+            <div className="flex gap-3 text-xs font-medium">
+              <button type="button" onClick={() => setAllHods(true)} className="text-primary-600 dark:text-primary-400 hover:underline">Select all</button>
+              <button type="button" onClick={() => setAllHods(false)} className="text-primary-600 dark:text-primary-400 hover:underline">Select none</button>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+            Pick exactly which HODs get a copy of every report-submitted email — unchecked HODs won't receive it.
+          </p>
+          <div className="space-y-1 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+            {form.hods.map((h) => (
+              <label key={h._id} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                <input type="checkbox" className="rounded" checked={h.notified} onChange={() => toggleHod(h._id)} />
+                <span className="text-gray-800 dark:text-gray-200 font-medium">{h.name}</span>
+                <span className="text-xs text-gray-400">{h.email}</span>
+              </label>
+            ))}
+            {form.hods.length === 0 && <p className="text-sm text-gray-400 px-3 py-2">No active HODs found.</p>}
+          </div>
+        </div>
+
         <div className="pt-3 border-t border-gray-100 dark:border-gray-700 space-y-4">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Per zone: who should be notified when an RM in that zone submits a report (usually the zone's Team Leads). These don't have to be existing user accounts.

@@ -45,8 +45,8 @@ const notifyReportSubmitted = async (report, rm) => {
       if (tl?.isActive) recipients.push({ name: tl.name, email: tl.email, _id: tl._id });
     }
 
-    if (emailConfig.notifyAllHods) {
-      const hods = await User.find({ role: 'HOD', isActive: true }).select('name email');
+    if (emailConfig.hodRecipientIds.length) {
+      const hods = await User.find({ _id: { $in: emailConfig.hodRecipientIds }, role: 'HOD', isActive: true }).select('name email');
       hods.forEach((h) => recipients.push({ name: h.name, email: h.email, _id: h._id }));
     }
 

@@ -5,6 +5,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Zone = require('../src/models/Zone');
+const User = require('../src/models/User');
 const EmailConfig = require('../src/models/EmailConfig');
 
 // Captured from the file being replaced (backend/src/config/zoneNotifyRecipients.js).
@@ -43,13 +44,21 @@ const OLD_ZONE_NOTIFY_RECIPIENTS = {
     config.fromName = process.env.EMAIL_FROM_NAME;
   }
 
+  if (!config.hodRecipientIds.length) {
+    const hods = await User.find({ role: 'HOD', isActive: true }).select('_id name');
+    config.hodRecipientIds = hods.map((h) => h._id);
+    console.log('Seeded hodRecipientIds (previously "notify all HODs" was implicit) with:', hods.map((h) => h.name));
+  } else {
+    console.log('hodRecipientIds already set — leaving as-is.');
+  }
+
   await config.save();
   console.log('EmailConfig singleton is now:', {
     fromName: config.fromName,
     fromEmail: config.fromEmail,
     hasAppPassword: !!config.appPassword,
     enabled: config.enabled,
-    notifyAllHods: config.notifyAllHods,
+    hodRecipientIds: config.hodRecipientIds,
     zoneRecipients: config.zoneRecipients,
   });
 

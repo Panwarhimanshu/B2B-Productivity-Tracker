@@ -25,7 +25,9 @@ const emailConfigSchema = new mongoose.Schema(
     fromEmail: { type: String, trim: true, lowercase: true, default: '' },
     appPassword: { type: String, default: '', select: false },
     enabled: { type: Boolean, default: true },
-    notifyAllHods: { type: Boolean, default: true },
+    // Explicit opt-in list — a HOD only gets report-submitted emails if their _id is here,
+    // so the page can show/curate exactly who's in and who's out (not an all-or-nothing switch).
+    hodRecipientIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], default: [] },
     zoneRecipients: { type: [zoneRecipientSchema], default: [] },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
